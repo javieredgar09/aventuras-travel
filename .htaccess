@@ -1,0 +1,19 @@
+RewriteEngine On
+RewriteBase /aventuras/
+
+# Si el archivo existe directamente (ej: public/assets/css/style.css), servirlo
+RewriteCond %{REQUEST_FILENAME} -f
+RewriteRule ^ - [L]
+
+# Si es un directorio real PERO NO ES public/ ni la raíz /aventuras/, servirlo
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteCond %{REQUEST_URI} !^/aventuras/public(/.*)?$
+RewriteCond %{REQUEST_URI} !^/aventuras/?$
+RewriteRule ^ - [L]
+
+# Si el archivo existe dentro de public/ (assets, imágenes, seed.php, storage.php, etc.)
+RewriteCond %{DOCUMENT_ROOT}/aventuras/public/$1 -f
+RewriteRule ^(.+)$ public/$1 [L]
+
+# Todo lo demás va al front controller
+RewriteRule ^(.*)$ public/index.php [QSA,L]

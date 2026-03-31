@@ -1,0 +1,87 @@
+/* Estilos refinados para dashboard cliente — inspirado en los diseños provistos */
+:root{
+  --cd-bg:#f4fafb;
+  --cd-card:#ffffff;
+  --cd-primary:#0f6b66; /* principal turquesa oscuro */
+  --cd-accent:#23b3a8; /* acento brillante */
+  --cd-muted:#6b7d7e;
+  --cd-hero-overlay:linear-gradient(180deg, rgba(6,40,40,0.55), rgba(6,40,40,0.22));
+  /* Escala tipográfica */
+  --fs-hero-desktop:64px;
+  --fs-hero-tablet:40px;
+  --fs-h1:32px;
+  --fs-h2:22px;
+  --fs-h3:18px;
+  --fs-base:15px;
+  --line-hero:1.02;
+  --line-base:1.45;
+  --fw-regular:500;
+  --fw-strong:800;
+}
+.body, body{background:var(--cd-bg);font-family:Inter, system-ui, -apple-system, 'Segoe UI', Roboto, Arial}
+.client-portal .client-dashboard.container{max-width:1220px;margin:0 auto;padding:0 6px;font-size:var(--fs-base);line-height:var(--line-base);font-weight:var(--fw-regular);color:#08363a}
+.hero-card{border-radius:22px;overflow:hidden;background-size:cover;background-position:center;position:relative;padding:56px 48px;color:#fff;box-shadow:0 30px 60px rgba(7,36,40,0.08);min-height:220px}
+.client-portal .hero-card::after{content:'';position:absolute;inset:0;border-radius:22px;background:var(--cd-hero-overlay)}
+.client-portal .hero-card .hero-content{position:relative;z-index:2;max-width:860px}
+.client-portal .hero-card .badge{background:rgba(255,255,255,0.12);backdrop-filter:blur(4px);padding:8px 12px;border-radius:999px;font-weight:700;font-size:13px;display:inline-block}
+.client-portal .hero-title{font-size:var(--fs-hero-desktop) !important;font-weight:var(--fw-strong) !important;margin:14px 0 !important;line-height:var(--line-hero) !important;text-shadow:0 2px 12px rgba(0,0,0,0.28) !important;color: #fff !important}
+.client-portal .hero-sub{font-size:var(--fs-h3);opacity:0.95}
+.hero-actions{margin-top:20px;display:flex;gap:14px}
+.hero-actions .btn{border-radius:999px;padding:12px 20px;box-shadow:0 10px 28px rgba(17,107,102,0.12)}
+.client-portal .card{background:var(--cd-card) !important;padding:20px !important;border-radius:16px !important;box-shadow:0 10px 30px rgba(16,31,31,0.06) !important}
+.client-portal .card h2, .client-portal .card h3, .client-portal .card h4{margin:0 0 8px 0;font-weight:var(--fw-strong);color:var(--cd-primary)}
+.card h2{font-size:var(--fs-h2)}
+.card h3{font-size:var(--fs-h3)}
+.card h4{font-size:16px}
+.client-portal .portal-tabs{display:flex;gap:12px;padding:8px;background:transparent;margin-top:18px;border-radius:12px}
+.client-portal .portal-tabs .tab{background:transparent;border:none;padding:12px 18px;border-radius:12px;cursor:pointer;color:var(--cd-primary);font-weight:800}
+.client-portal .portal-tabs .tab.active{background:#ffffff;border:1px solid rgba(16,31,31,0.04);box-shadow:0 8px 20px rgba(16,31,31,0.04)}
+.grid-layout main{min-height:200px}
+.client-portal .it-day{padding:18px;margin-bottom:14px;border-radius:12px;border:1px solid rgba(16,31,31,0.04);background:linear-gradient(180deg,#fff,#fbffff)}
+.client-portal .it-day h4{margin:0;font-size:16px;font-weight:var(--fw-strong)}
+.client-portal .it-day p{margin:6px 0 0;color:var(--cd-muted);font-size:14px}
+.it-day svg{flex:0 0 36px}
+.info-item{background:var(--cd-bg);padding:12px;border-radius:10px;margin-top:8px}
+.btn{display:inline-block;padding:12px 18px;border-radius:999px;background:var(--cd-accent);color:#fff;text-decoration:none;font-weight:800}
+.btn.secondary{background:#ffffff;color:var(--cd-primary);border:2px solid rgba(0,0,0,0.04)}
+.muted{color:var(--cd-muted)}
+
+/* Sidebar refinements */
+aside .card{background:linear-gradient(180deg,#f7fdfd,#eef8f8);border-radius:16px}
+aside .value{font-size:22px;font-weight:900;color:var(--cd-primary)}
+.info-item svg{margin-left:8px}
+
+@media(max-width:1024px){
+  :root{--fs-hero-desktop:var(--fs-hero-tablet)}
+  .hero-title{font-size:var(--fs-hero-tablet)}
+}
+
+@media(max-width:900px){
+  .grid-layout{grid-template-columns:1fr!important}
+  .hero-title{font-size:28px}
+  .client-dashboard.container{padding:0 14px}
+}
+
+/* Layout de dashboard con columnas */
+.grid-layout{margin-top:18px}
+.grid-layout .card{padding:18px}
+.client-dashboard .grid{margin-top:12px}
+
+/* Itinerary cards grid */
+.client-dashboard .grid .card{min-height:120px}
+
+
+/* Hide legacy fixed sidebar when body has .no-sidebar */
+.client-portal.no-sidebar aside{display:none !important}
+.client-portal.no-sidebar .flex-1{margin-left:0 !important}
+.client-portal header {padding-left:18px}
+
+/* Mobile nav overlay adjustments */
+#mobileNavOverlay nav a{display:block;padding:12px 8px;border-radius:6px}
+#mobileNavOverlay{display:none}
+
+@media(max-width:1024px){
+  /* Ensure hero and content are full width on tablet/mobile */
+  .client-dashboard.container{padding:0 12px}
+}
+

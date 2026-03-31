@@ -1,0 +1,36 @@
+/* Admin-specific styles moved here to avoid leaking into client portal */
+
+/* =============================================
+   Pequeños ajustes para el panel Admin
+   - Asegura bordes redondeados consistentes
+   - Previene overflow en botones dentro de grids
+============================================= */
+.rounded-xl, .rounded-2xl, .rounded-lg { border-radius: 0.75rem !important; }
+.min-w-0 { min-width: 0 !important; }
+
+/* Rotate icon when group is collapsed */
+.group-toggle .material-symbols-outlined { transition: transform 0.18s ease; }
+.group-toggle .material-symbols-outlined.rotated { transform: rotate(180deg); }
+
+/* Small style for the expand-all button */
+#toggle-all-groups { font-weight: 600; }
+
+/* Stat card compact variant */
+.stat-card {
+    padding: 1rem !important;
+    border-radius: 0.75rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 0.5rem;
+}
+.stat-card .stat-top { display:flex; justify-content:space-between; align-items:center; gap:0.5rem }
+.stat-card .stat-title { font-size:0.625rem; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; }
+.stat-card .stat-number { font-size:1.375rem; font-weight:800; color:var(--petroleo); }
+.stat-card .stat-sub { font-size:0.688rem; color: rgba(27,58,75,0.45); }
+.stat-spark { width:100%; height:28px; display:block; }
+
+/* Compact quick link */
+.quick-link-compact { padding:0.6rem; gap:0.8rem }
+.quick-link-compact .w-10 { width:40px; height:40px }
+.quick-link-compact .text-sm { font-size:0.85rem }

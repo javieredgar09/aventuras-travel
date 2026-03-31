@@ -1,0 +1,9 @@
+RewriteEngine On
+RewriteBase /aventuras/public/
+
+# Si el archivo existe, servirlo directamente (assets, storage.php, seed.php, etc.)
+RewriteCond %{REQUEST_FILENAME} -f
+RewriteRule ^ - [L]
+
+# Todo lo demás redirige al front controller
+RewriteRule ^(.*)$ index.php [QSA,L]

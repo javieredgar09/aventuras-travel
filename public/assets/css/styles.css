@@ -1,0 +1,97 @@
+/* =============================================
+   Aventuras Travel Pucallpa – Custom Utilities
+   (Tailwind CSS handles most styling)
+   ============================================= */
+
+:root {
+    --petroleo: #1B3A4B;
+    --petroleo-light: #2D5468;
+    --turquesa: #4ABED9;
+    --turquesa-dark: #00687A;
+    --humo: #F6FAFC;
+    --surface: #EAF0F2;
+    --success: #10B981;
+    --warning: #F59E0B;
+    --error: #EF4444;
+}
+
+/* Glass card effect */
+.glass-card {
+    backdrop-filter: blur(12px);
+    background-color: rgba(255, 255, 255, 0.7);
+}
+
+/* Gradient overlays */
+.gradient-hero {
+    background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 60%);
+}
+
+/* Sidebar active state */
+.sidebar-active {
+    background: rgba(74, 190, 217, 0.15);
+    border-left: 3px solid #4ABED9;
+    color: #4ABED9;
+}
+
+/* Progress bar */
+.progress-bar {
+    height: 0.5rem;
+    background: rgba(27, 58, 75, 0.1);
+    border-radius: 9999px;
+    overflow: hidden;
+}
+.progress-bar .fill {
+    height: 100%;
+    border-radius: 9999px;
+    background: linear-gradient(90deg, #4ABED9, #10B981);
+    transition: width 0.5s ease;
+}
+
+/* Badge variants */
+.badge-aprobado { background: #D1FAE5; color: #065F46; }
+.badge-pendiente { background: #FEF3C7; color: #92400E; }
+.badge-rechazado { background: #FEE2E2; color: #991B1B; }
+.badge-atrasado { background: #FFE4E6; color: #9F1239; }
+.badge-active { background: #CCFBF1; color: #0D9488; }
+
+/* Countdown digits */
+.countdown-digit {
+    font-size: 2.5rem;
+    font-weight: 900;
+    line-height: 1;
+    color: white;
+}
+.countdown-label {
+    font-size: 0.625rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.6);
+}
+
+/* Star rating */
+.stars-filled {
+    font-variation-settings: 'FILL' 1;
+}
+
+/* Animations */
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(1rem); }
+    to { opacity: 1; transform: translateY(0); }
+}
+.animate-fadeInUp {
+    animation: fadeInUp 0.5s ease forwards;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #BDC8CD; border-radius: 3px; }
+
+/* =============================================
+   Fin de estilos compartidos. Cualquier regla
+   específica del panel admin se movió a
+   public/assets/css/admin.css para evitar
+   filtrados de estilos en el portal cliente.
+   ============================================= */
+
+

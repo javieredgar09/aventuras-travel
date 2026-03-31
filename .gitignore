@@ -1,0 +1,35 @@
+# === Entorno local ===
+.env
+*.log
+mailoutput/
+
+# === Storage (archivos subidos por usuarios) ===
+storage/comprobantes/*
+storage/cache/serpapi/*
+!storage/comprobantes/.gitkeep
+!storage/cache/.gitkeep
+!storage/cache/serpapi/.gitkeep
+
+# === IDE / Editor ===
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+Thumbs.db
+.DS_Store
+
+# === OS ===
+desktop.ini
+ehthumbs.db
+
+# === Backups ===
+*.bak
+*.bak.*
+
+# === Diseño (prototipos, no código fuente) ===
+design/
+
+# === Agentes / Instrucciones internas ===
+AGENTE.md
+AGENTS.md

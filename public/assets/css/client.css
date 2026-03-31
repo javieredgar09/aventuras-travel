@@ -1,0 +1,80 @@
+/* client.css — Aventuras Travel Client Portal */
+/* Design System: The Elevated Explorer (Material Design 3) */
+
+/* === Base === */
+.material-symbols-outlined {
+    font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
+
+/* === Glass panel === */
+.glass-panel {
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+}
+
+/* === Nav active link === */
+.nav-link-active {
+    color: #00687a;
+    font-weight: 700;
+    border-bottom: 2px solid #00687a;
+}
+
+/* === Smooth scrolling === */
+html {
+    scroll-behavior: smooth;
+}
+
+/* === Animations === */
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fadeInUp {
+    animation: fadeInUp 0.4s ease-out;
+}
+
+/* === Scrollbar === */
+::-webkit-scrollbar {
+    width: 6px;
+}
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+::-webkit-scrollbar-thumb {
+    background: #bdc8cd;
+    border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: #6d797d;
+}
+
+/* === Print === */
+@media print {
+    nav, .fixed { display: none !important; }
+    main { padding-top: 0 !important; }
+}
+
+/* === Badges de estado === */
+.badge-aprobado, .badge-pagado, .badge-activo {
+    background: #d1fae5; color: #065f46;
+}
+.badge-pendiente {
+    background: #fef3c7; color: #92400e;
+}
+.badge-rechazado, .badge-cancelado {
+    background: #fde2e2; color: #991b1b;
+}
+.badge-atrasado {
+    background: #fee2e2; color: #b91c1c;
+}
+
+/* === Progress bar === */
+.progress-bar {
+    height: 8px; background: #e5e7eb; border-radius: 9999px; overflow: hidden;
+}
+.progress-bar .fill {
+    height: 100%; background: linear-gradient(90deg, #0ea5a3, #0d8f8d); border-radius: 9999px;
+    transition: width 0.6s ease;
+}
