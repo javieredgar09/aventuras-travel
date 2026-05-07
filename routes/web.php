@@ -4,6 +4,9 @@
  * Aventuras Travel
  */
 
+// ==================== ARCHIVOS (servir desde /storage) ====================
+Router::get('/storage/{type}/{filename}', [FileController::class, 'serve']);
+
 // ==================== PÁGINAS PÚBLICAS ====================
 Router::get('/', [HomeController::class, 'index']);
 Router::get('/search', [SearchController::class, 'index']);
@@ -24,10 +27,15 @@ Router::get('/client/services', [ClientController::class, 'services'], [AuthMidd
 Router::get('/client/contract/{id}', [ClientController::class, 'contract'], [AuthMiddleware::class]);
 Router::get('/client/payments', [ClientController::class, 'payments'], [AuthMiddleware::class]);
 Router::post('/client/payments/register', [ClientController::class, 'registerPayment'], [AuthMiddleware::class]);
+Router::get('/client/payments/{id}/receipt', [ClientController::class, 'downloadReceipt'], [AuthMiddleware::class]);
+Router::get('/client/soporte', [ClientController::class, 'soporte'], [AuthMiddleware::class]);
 
 // ==================== PANEL REPRESENTANTE (GRUPAL) ====================
 Router::get('/leader/dashboard', [ClientController::class, 'leaderDashboard'], [AuthMiddleware::class]);
 Router::get('/leader/contracts', [ClientController::class, 'leaderContracts'], [AuthMiddleware::class]);
+Router::get('/leader/payments', [ClientController::class, 'leaderPayments'], [AuthMiddleware::class]);
+Router::post('/leader/payments/register', [ClientController::class, 'leaderRegisterPayment'], [AuthMiddleware::class]);
+Router::get('/leader/payments/{id}/receipt', [ClientController::class, 'downloadReceipt'], [AuthMiddleware::class]);
 Router::post('/leader/group/{id}/itinerary/save', [SaleController::class, 'saveItinerary'], [AuthMiddleware::class]);
 
 // ==================== PANEL ADMIN ====================
@@ -60,6 +68,8 @@ Router::get('/admin/contracts/{id}/print', [ContractController::class, 'print'],
 // Pagos
 Router::get('/admin/payments', [PaymentController::class, 'index'], [AuthMiddleware::class, AdminMiddleware::class]);
 Router::post('/admin/payments/register', [PaymentController::class, 'registerAdmin'], [AuthMiddleware::class, AdminMiddleware::class]);
+Router::get('/admin/payments/{id}/receipt', [PaymentController::class, 'downloadReceipt'], [AuthMiddleware::class, AdminMiddleware::class]);
+Router::post('/admin/payments/{id}/regenerate', [PaymentController::class, 'regenerate'], [AuthMiddleware::class, AdminMiddleware::class]);
 
 // Reportes
 Router::get('/admin/reports', [ReportController::class, 'index'], [AuthMiddleware::class, AdminMiddleware::class]);
@@ -81,6 +91,8 @@ Router::get('/admin/contracts', [ContractController::class, 'index'], [AuthMiddl
 Router::get('/admin/contracts/{id}', [ContractController::class, 'show'], [AuthMiddleware::class, AdminMiddleware::class]);
 Router::get('/admin/contracts/{id}/edit', [ContractController::class, 'edit'], [AuthMiddleware::class, AdminMiddleware::class]);
 Router::post('/admin/contracts/{id}/update', [ContractController::class, 'update'], [AuthMiddleware::class, AdminMiddleware::class]);
+Router::post('/admin/contracts/{id}/upload-contract', [FileController::class, 'uploadContract'], [AuthMiddleware::class, AdminMiddleware::class]);
+Router::post('/admin/contracts/{id}/upload-voucher', [FileController::class, 'uploadVoucher'], [AuthMiddleware::class, AdminMiddleware::class]);
 
 // Pasajeros
 Router::get('/admin/passengers', [PassengerController::class, 'index'], [AuthMiddleware::class, AdminMiddleware::class]);
@@ -94,6 +106,8 @@ Router::post('/admin/users/{id}/update', [UserController::class, 'update'], [Aut
 Router::post('/admin/users/{id}/toggle', [UserController::class, 'toggle'], [AuthMiddleware::class, AdminMiddleware::class]);
 Router::post('/admin/users/{id}/delete', [UserController::class, 'delete'], [AuthMiddleware::class, AdminMiddleware::class]);
 Router::post('/admin/users/{id}/reset-password', [UserController::class, 'resetPassword'], [AuthMiddleware::class, AdminMiddleware::class]);
+Router::post('/admin/users/{id}/send-whatsapp', [UserController::class, 'sendWhatsApp'], [AuthMiddleware::class, AdminMiddleware::class]);
+Router::get('/admin/users/{id}/credentials', [UserController::class, 'credentials'], [AuthMiddleware::class, AdminMiddleware::class]);
 
 // ==================== SEED (solo desarrollo - protegido por admin) ====================
 Router::get('/seed-fresh', [HomeController::class, 'seedFresh'], [AuthMiddleware::class, AdminMiddleware::class]);

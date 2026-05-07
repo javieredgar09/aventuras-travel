@@ -8,11 +8,11 @@ class Database {
     private $pdo;
 
     private function __construct() {
-        $host = 'localhost';
-        $dbname = 'aventuras';
-        $username = 'root';
-        $password = '';
-        $charset = 'utf8mb4';
+        $host    = defined('DB_HOST')    ? DB_HOST    : 'localhost';
+        $dbname  = defined('DB_NAME')    ? DB_NAME    : 'aventuras';
+        $username = defined('DB_USER')   ? DB_USER    : 'root';
+        $password = defined('DB_PASS')   ? DB_PASS    : '';
+        $charset  = defined('DB_CHARSET') ? DB_CHARSET : 'utf8mb4';
 
         $dsn = "mysql:host={$host};dbname={$dbname};charset={$charset}";
         $options = [

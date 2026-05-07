@@ -11,8 +11,8 @@ class EmailService {
 
     public function __construct() {
         // En un entorno de producción, esto vendría del archivo de configuración o variables de entorno.
-        $this->fromEmail = 'reservas.aventurastravelpcl@gmail.com';
-        $this->fromName = 'Aventuras Travel';
+        $this->fromEmail = 'aventurastravelpucallpa@gmail.com';
+        $this->fromName = 'Aventuras Travel Pucallpa';
     }
 
     /**
@@ -120,6 +120,71 @@ class EmailService {
         $html = $this->getTemplate($title, $content);
 
         return $this->sendEmail($toEmail, "Tus Credenciales de Acceso - Aventuras Travel", $html);
+    }
+
+    /**
+     * Notificar al cliente que su pago fue aprobado
+     */
+    public function sendPaymentApproval(string $toEmail, string $nombre, string $codigoContrato, float $monto): bool {
+        $baseUrl   = $this->getBaseUrl();
+        $paymentsUrl = rtrim($baseUrl, '/') . '/client/payments';
+
+        $title   = '✅ Pago Aprobado – Aventuras Travel';
+        $montoFmt = number_format($monto, 2);
+        $content = "
+            <p>Hola <strong>{$nombre}</strong>,</p>
+            <p>Nos complace informarte que tu pago ha sido <strong style='color:#16a34a;'>aprobado exitosamente</strong>.</p>
+
+            <div class='box'>
+                <p style='margin:0 0 8px 0;'><strong>Detalles del pago:</strong></p>
+                <p style='margin:5px 0;'>📄 <strong>Contrato:</strong> <span class='highlight'>{$codigoContrato}</span></p>
+                <p style='margin:5px 0;'>💵 <strong>Monto aprobado:</strong> <span class='highlight'>\$ {$montoFmt}</span></p>
+            </div>
+
+            <p>Puedes revisar el estado actualizado de tu plan de pagos en el portal de clientes:</p>
+            <div style='text-align:center;'>
+                <a href='{$paymentsUrl}' class='btn' style='color:#ffffff !important;'>Ver mis Pagos</a>
+            </div>
+            <p style='margin-top:30px; font-size:14px; color:#64748b;'>Gracias por confiar en Aventuras Travel. ✈️</p>
+        ";
+
+        $html = $this->getTemplate($title, $content);
+        return $this->sendEmail($toEmail, 'Pago Aprobado – Aventuras Travel', $html);
+    }
+
+    /**
+     * Notificar al cliente que su pago fue rechazado
+     */
+    public function sendPaymentRejection(string $toEmail, string $nombre, string $codigoContrato, float $monto, string $motivo = ''): bool {
+        $baseUrl     = $this->getBaseUrl();
+        $paymentsUrl = rtrim($baseUrl, '/') . '/client/payments';
+
+        $title   = '❌ Pago Rechazado – Aventuras Travel';
+        $montoFmt = number_format($monto, 2);
+        $motivoHtml = $motivo
+            ? "<p style='margin:5px 0;'>📝 <strong>Motivo:</strong> " . htmlspecialchars($motivo) . "</p>"
+            : '';
+
+        $content = "
+            <p>Hola <strong>{$nombre}</strong>,</p>
+            <p>Lamentablemente, tu pago ha sido <strong style='color:#dc2626;'>rechazado</strong> por nuestro equipo de administración.</p>
+
+            <div class='box'>
+                <p style='margin:0 0 8px 0;'><strong>Detalles del pago rechazado:</strong></p>
+                <p style='margin:5px 0;'>📄 <strong>Contrato:</strong> <span class='highlight'>{$codigoContrato}</span></p>
+                <p style='margin:5px 0;'>💵 <strong>Monto:</strong> <span class='highlight'>\$ {$montoFmt}</span></p>
+                {$motivoHtml}
+            </div>
+
+            <p>Por favor, sube un nuevo comprobante o contáctanos para aclarar cualquier inconveniente:</p>
+            <div style='text-align:center;'>
+                <a href='{$paymentsUrl}' class='btn' style='color:#ffffff !important;'>Ir a mis Pagos</a>
+            </div>
+            <p style='margin-top:30px; font-size:14px; color:#64748b;'>Si tienes alguna pregunta, escríbenos a aventurastravelpucallpa@gmail.com</p>
+        ";
+
+        $html = $this->getTemplate($title, $content);
+        return $this->sendEmail($toEmail, 'Pago Rechazado – Aventuras Travel', $html);
     }
 
     /**

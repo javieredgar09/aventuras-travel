@@ -1,8 +1,10 @@
 <?php
 /**
- * Vista: Dashboard Cliente Grupal (Colegio) — Design System "The Elevated Explorer"
- * Variables: $data (user, contrato, contratos, vuelos, pasajeros, pagos, servicios, vouchers, pago_completo)
+ * Vista: Dashboard Cliente Grupal (Colegio) - Aventuras Travel Pucallpa
+ * Redise&ntilde;o premium con im&aacute;genes din&aacute;micas por destino
  */
+require_once __DIR__ . '/../../../helpers/DestinationHelper.php';
+
 $user       = $data['user'] ?? ($_SESSION['user'] ?? []);
 $contrato   = $data['contrato'] ?? null;
 $grupo      = $contrato['grupo'] ?? ($data['grupo'] ?? null);
@@ -12,19 +14,19 @@ $pagos      = $data['pagos'] ?? [];
 $servicios  = $data['servicios'] ?? [];
 $vouchers   = $data['vouchers'] ?? [];
 $pago_completo = $data['pago_completo'] ?? false;
+
 $nombre     = htmlspecialchars(trim(($user['nombre'] ?? '')));
 $codigo     = htmlspecialchars($contrato['codigo'] ?? '');
 $destino    = htmlspecialchars($grupo['destino'] ?? $contrato['destino'] ?? 'Tu Destino');
+$grupoNombre = htmlspecialchars($grupo['nombre'] ?? '');
 
 $valor_total  = (float)($contrato['valor_total'] ?? 0);
 $total_pagado = (float)($contrato['total_pagado'] ?? 0);
 $saldo        = $valor_total - $total_pagado;
-$moneda       = $contrato['moneda'] ?? 'PEN';
 
 if (!function_exists('fmoney')) {
-    function fmoney(float $a, string $c = 'PEN'): string {
-        $s = match(strtoupper($c)) { 'USD','$' => '$ ', 'EUR' => '€ ', 'PEN' => 'S/ ', default => strtoupper($c).' ' };
-        return $s . number_format($a, 2);
+    function fmoney(float $a, string $c = 'USD'): string {
+        return '$' . number_format($a, 2);
     }
 }
 
@@ -37,292 +39,191 @@ if (!empty($contrato['fecha_salida'])) {
 }
 
 $vuelo = !empty($vuelos) ? $vuelos[0] : null;
-$hotel = null;
-foreach ($servicios as $s) {
-    if (stripos($s['tipo'] ?? '', 'hotel') !== false || stripos($s['tipo'] ?? '', 'aloj') !== false) { $hotel = $s; break; }
-}
-
-// Imagen hero por destino
-$heroImages = [
-    'cancún'     => 'https://images.unsplash.com/photo-1510097467424-192d713fd8b2?w=1200&q=80',
-    'cancun'     => 'https://images.unsplash.com/photo-1510097467424-192d713fd8b2?w=1200&q=80',
-    'punta cana' => 'https://images.unsplash.com/photo-1580237072617-771c3ecc4a24?w=1200&q=80',
-    'cusco'      => 'https://images.unsplash.com/photo-1526392060635-9d6019884377?w=1200&q=80',
-    'lima'       => 'https://images.unsplash.com/photo-1531968455001-5c5272a67c71?w=1200&q=80',
-    'miami'      => 'https://images.unsplash.com/photo-1535498730771-e735b998cd64?w=1200&q=80',
-    'cartagena'  => 'https://images.unsplash.com/photo-1583997052301-0fc38714e428?w=1200&q=80',
-];
-$heroImg = $contrato['hero_image'] ?? null;
-if (empty($heroImg)) {
-    $destLower = strtolower($destino);
-    foreach ($heroImages as $key => $url) {
-        if (strpos($destLower, $key) !== false) { $heroImg = $url; break; }
-    }
-}
-if (empty($heroImg)) $heroImg = 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=1200&q=80';
+$heroImg = DestinationHelper::getHeroImage($destino);
+$destIcon = DestinationHelper::getIcon($destino);
+$accentColor = DestinationHelper::getAccentColor($destino);
+$progreso = $valor_total > 0 ? min(100, round(($total_pagado / $valor_total) * 100)) : 0;
 ?>
 
 <?php if ($contrato): ?>
 
 <!-- HERO -->
-<section class="relative h-[420px] md:h-[450px] rounded-[2rem] overflow-hidden mb-8 shadow-2xl group">
-    <img alt="<?= $destino ?>" class="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" src="<?= htmlspecialchars($heroImg) ?>">
-    <div class="absolute inset-0 bg-gradient-to-t from-secondary/90 via-secondary/20 to-transparent"></div>
-    <div class="absolute bottom-0 left-0 p-8 md:p-16 w-full flex flex-col md:flex-row md:items-end justify-between gap-8">
-        <div class="max-w-2xl">
-            <div class="bg-primary-container/40 backdrop-blur-md px-4 py-1.5 rounded-full w-fit mb-6 border border-white/20">
-                <span class="text-white text-xs font-black tracking-widest uppercase"><?= htmlspecialchars($grupo['nombre'] ?? '') ?> · <?= $codigo ?></span>
-            </div>
-            <h1 class="text-4xl md:text-5xl font-black text-white tracking-tighter leading-tight">
-                ¡Hola <?= $nombre ?>!<br>
-                <?php if ($daysUntil !== null && $daysUntil > 0): ?>
-                Tu viaje a <span class="text-primary-container"><?= $destino ?></span> en <?= $daysUntil ?> días
-                <?php elseif ($daysUntil === 0): ?>
-                <span class="text-primary-container">¡Tu viaje es hoy!</span>
-                <?php else: ?>
-                Tu viaje a <span class="text-primary-container"><?= $destino ?></span>
-                <?php endif; ?>
-            </h1>
+<section class="relative h-[220px] sm:h-[260px] md:h-[320px] rounded-2xl overflow-hidden mb-6 group shadow-2xl">
+    <img alt="<?= $destino ?>" fetchpriority="high" loading="eager"
+         class="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+         src="<?= htmlspecialchars($heroImg) ?>">
+    <div class="absolute inset-0 bg-gradient-to-r from-petroleo-dark/95 via-petroleo/65 to-transparent"></div>
+    <div class="absolute inset-0 bg-gradient-to-t from-petroleo-dark/90 via-transparent to-transparent"></div>
+    <div class="absolute bottom-0 left-0 w-60 h-60 rounded-full blur-3xl translate-y-1/3 -translate-x-1/4 pointer-events-none" style="background:<?= $accentColor ?>22;"></div>
+
+    <div class="absolute top-4 left-5">
+        <span class="bg-white/10 backdrop-blur-xl text-white text-[10px] font-black tracking-widest uppercase px-4 py-2 rounded-full border border-white/20 shadow-lg inline-flex items-center gap-2">
+            <span class="material-symbols-outlined text-sm text-turquesa-light">school</span>
+            <?= $grupoNombre ?>
+        </span>
+    </div>
+
+    <?php if ($daysUntil !== null && $daysUntil > 0): ?>
+    <div class="absolute top-4 right-5">
+        <div class="bg-gradient-to-br from-coral to-gold rounded-2xl px-5 py-3 text-center shadow-2xl shadow-coral/40 border border-white/20 hover:scale-110 transition-transform">
+            <div class="text-3xl font-black text-white leading-none"><?= $daysUntil ?></div>
+            <div class="text-[9px] uppercase tracking-widest text-white/80 font-black mt-0.5">D&iacute;as</div>
         </div>
-        <div class="flex flex-col sm:flex-row gap-4 shrink-0">
-            <?php if ($pago_completo && !empty($vouchers)): ?>
-            <button class="px-8 py-4 bg-white text-secondary font-bold rounded-2xl shadow-lg hover:bg-surface-container-low transition-all active:scale-95 flex items-center justify-center gap-3">
-                <span class="material-symbols-outlined">download</span> Descargar Vouchers
-            </button>
+    </div>
+    <?php endif; ?>
+
+    <div class="absolute bottom-0 left-0 right-0 p-5 sm:p-7">
+        <h1 class="text-3xl sm:text-4xl md:text-5xl font-black text-white leading-tight drop-shadow-2xl mb-2">
+            <span class="text-2xl sm:text-3xl mr-1"><?= $destIcon ?></span> <?= $destino ?>
+        </h1>
+        <div class="flex flex-wrap gap-3 text-sm">
+            <span class="flex items-center gap-1.5 text-white/90 font-semibold bg-white/10 backdrop-blur px-3 py-1 rounded-lg">
+                <span class="material-symbols-outlined text-base text-coral">confirmation_number</span><?= $codigo ?>
+            </span>
+            <?php if (!empty($contrato['fecha_salida'])): ?>
+            <span class="flex items-center gap-1.5 text-white/90 font-semibold bg-white/10 backdrop-blur px-3 py-1 rounded-lg">
+                <span class="material-symbols-outlined text-base text-gold">calendar_month</span>
+                <?= htmlspecialchars($contrato['fecha_salida']) ?>
+            </span>
             <?php endif; ?>
-            <a href="<?= Router::url('/client/services') ?>" class="px-8 py-4 bg-primary text-white font-bold rounded-2xl shadow-lg hover:brightness-110 transition-all active:scale-95 flex items-center justify-center gap-3">
-                <span class="material-symbols-outlined">map</span> Ver Itinerario
-            </a>
         </div>
     </div>
 </section>
 
-<!-- BENTO GRID -->
-<div class="grid grid-cols-1 xl:grid-cols-4 gap-8">
-    <!-- LEFT COL -->
-    <div class="xl:col-span-1 flex flex-col gap-6">
-        <!-- Versículo Bíblico -->
-        <div class="bg-gradient-to-br from-cyan-600 to-primary p-8 rounded-[2rem] shadow-xl text-white flex flex-col justify-between min-h-[300px] relative overflow-hidden group">
-            <div class="relative z-10">
-                <span class="material-symbols-outlined text-4xl text-cyan-200 mb-3">auto_stories</span>
-                <?php
-                $versiculos = [
-                    ['texto' => 'Porque yo sé los planes que tengo para ustedes, planes de bienestar y no de calamidad, a fin de darles un futuro y una esperanza.', 'cita' => 'Jeremías 29:11'],
-                    ['texto' => 'Mira que te mando que te esfuerces y seas valiente; no temas ni desmayes, porque Jehová tu Dios estará contigo en dondequiera que vayas.', 'cita' => 'Josué 1:9'],
-                    ['texto' => 'Confía en Jehová con todo tu corazón, y no te apoyes en tu propia prudencia. Reconócelo en todos tus caminos, y Él enderezará tus veredas.', 'cita' => 'Proverbios 3:5-6'],
-                    ['texto' => 'Todo lo puedo en Cristo que me fortalece.', 'cita' => 'Filipenses 4:13'],
-                    ['texto' => 'No se amolden al mundo actual, sino sean transformados mediante la renovación de su mente.', 'cita' => 'Romanos 12:2'],
-                ];
-                $verso = $versiculos[array_rand($versiculos)];
-                ?>
-                <p class="text-cyan-50 font-medium text-sm leading-relaxed italic">"<?= $verso['texto'] ?>"</p>
-            </div>
-            <div class="relative z-10 mt-6">
-                <p class="text-right text-white font-black text-sm">— <?= $verso['cita'] ?></p>
-                <p class="text-cyan-200/70 text-xs mt-4 text-center font-semibold">Nuevos caminos, grandes propósitos. ¡Dios te acompaña! ✨</p>
-            </div>
-            <span class="material-symbols-outlined absolute -right-8 -bottom-8 text-[200px] opacity-10 rotate-12 transition-transform group-hover:rotate-0">church</span>
+<!-- STATS -->
+<div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+    <div class="bg-gradient-to-br from-amber-500 to-amber-600 rounded-2xl p-5 text-white shadow-lg shadow-amber-500/20">
+        <div class="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center mb-3">
+            <span class="material-symbols-outlined text-white">account_balance_wallet</span>
         </div>
-        <!-- Estado -->
-        <div class="bg-surface-container-lowest p-6 rounded-[2rem] shadow-sm border border-outline-variant/10">
-            <p class="text-[11px] font-bold uppercase tracking-widest text-outline mb-4">Estado del Contrato</p>
-            <div class="flex items-center gap-3">
-                <?php $estado = strtolower($contrato['estado'] ?? 'activo'); ?>
-                <div class="w-3 h-3 rounded-full <?= $estado === 'cancelado' ? 'bg-red-500' : ($estado === 'pendiente' ? 'bg-amber-500' : 'bg-green-500') ?>"></div>
-                <span class="text-sm font-bold text-secondary"><?= ucfirst($estado) ?> & Confirmado</span>
-            </div>
-        </div>
-        <!-- Grupo Info -->
-        <div class="bg-surface-container-lowest p-6 rounded-[2rem] shadow-sm border border-outline-variant/10">
-            <p class="text-[11px] font-bold uppercase tracking-widest text-outline mb-4">Mi Grupo</p>
-            <h3 class="text-lg font-black text-secondary mb-2"><?= htmlspecialchars($grupo['nombre'] ?? '') ?></h3>
-            <p class="text-xs text-outline"><?= htmlspecialchars($grupo['institucion'] ?? $grupo['colegio'] ?? '') ?></p>
-            <?php if (!empty($grupo['representante_nombre'])): ?>
-            <div class="flex items-center gap-2 mt-4 pt-4 border-t border-outline-variant/10">
-                <span class="material-symbols-outlined text-primary text-lg">person</span>
-                <div>
-                    <p class="text-xs font-bold text-secondary"><?= htmlspecialchars($grupo['representante_nombre'] ?? '') ?></p>
-                    <p class="text-[10px] text-outline">Representante</p>
-                </div>
-            </div>
-            <?php endif; ?>
-        </div>
+        <div class="text-2xl font-black"><?= fmoney($saldo) ?></div>
+        <div class="text-xs text-white/70 font-semibold mt-1">Saldo pendiente</div>
     </div>
-
-    <!-- RIGHT COL (3-wide) -->
-    <div class="xl:col-span-3 space-y-8">
-        <!-- 3 Cards Row -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <!-- Saldo -->
-            <div class="bg-surface-container-lowest p-6 rounded-[2rem] shadow-sm border border-outline-variant/10 flex flex-col justify-between group hover:shadow-md transition-shadow">
-                <div class="flex justify-between items-start mb-6">
-                    <div>
-                        <p class="text-[11px] font-bold uppercase tracking-widest text-outline mb-1">Saldo Pendiente</p>
-                        <h2 class="text-3xl font-black text-secondary"><?= fmoney($saldo, $moneda) ?></h2>
-                    </div>
-                    <div class="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center">
-                        <span class="material-symbols-outlined text-primary-container text-2xl">payments</span>
-                    </div>
-                </div>
-                <div>
-                    <?php if ($saldo > 0): ?>
-                    <div class="bg-error-container/10 p-3 rounded-xl mb-4 border border-error/5">
-                        <p class="text-xs font-bold text-error flex items-center gap-2">
-                            <span class="material-symbols-outlined text-sm">event_busy</span> Total: <?= fmoney($valor_total, $moneda) ?>
-                        </p>
-                    </div>
-                    <?php endif; ?>
-                    <a href="<?= Router::url('/client/payments') ?>" class="block w-full py-3 bg-secondary text-white rounded-xl font-bold text-sm text-center hover:bg-primary transition-all active:scale-95 shadow-lg">Pagar Cuota</a>
-                </div>
-            </div>
-
-            <!-- Vuelo -->
-            <div class="bg-surface-container-lowest p-6 rounded-[2rem] shadow-sm border border-outline-variant/10 flex flex-col justify-between">
-                <p class="text-[11px] font-bold uppercase tracking-widest text-outline mb-4">Próximo Vuelo</p>
-                <?php if ($vuelo): ?>
-                <div class="flex items-center justify-between mb-8">
-                    <div class="text-center">
-                        <p class="text-3xl font-black text-secondary"><?= htmlspecialchars(strtoupper(substr($vuelo['origen'] ?? 'PCL', 0, 3))) ?></p>
-                        <p class="text-[10px] font-bold text-outline"><?= htmlspecialchars($vuelo['origen'] ?? '') ?></p>
-                    </div>
-                    <div class="flex-1 flex flex-col items-center px-4">
-                        <div class="w-full h-px bg-outline-variant relative">
-                            <span class="material-symbols-outlined absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-primary bg-surface-container-lowest px-2">flight_takeoff</span>
-                        </div>
-                        <p class="text-[10px] font-bold text-primary mt-3 tracking-widest"><?= htmlspecialchars($vuelo['numero_vuelo'] ?? $vuelo['aerolinea'] ?? '') ?></p>
-                    </div>
-                    <div class="text-center">
-                        <p class="text-3xl font-black text-secondary"><?= htmlspecialchars(strtoupper(substr($vuelo['destino'] ?? 'LIM', 0, 3))) ?></p>
-                        <p class="text-[10px] font-bold text-outline"><?= htmlspecialchars($vuelo['destino'] ?? '') ?></p>
-                    </div>
-                </div>
-                <div class="flex justify-between items-center py-3 px-4 bg-slate-50 rounded-2xl">
-                    <div class="flex items-center gap-2 text-sm font-bold text-secondary">
-                        <span class="material-symbols-outlined text-primary">calendar_today</span>
-                        <?= !empty($vuelo['fecha_salida']) ? date('d M', strtotime($vuelo['fecha_salida'])) : '-' ?>
-                    </div>
-                    <div class="flex items-center gap-2 text-sm font-bold text-secondary">
-                        <span class="material-symbols-outlined text-primary">schedule</span>
-                        <?= htmlspecialchars($vuelo['hora_salida'] ?? '--:--') ?>
-                    </div>
-                </div>
-                <?php else: ?>
-                <div class="flex-1 flex items-center justify-center"><p class="text-sm text-outline">Sin información de vuelo</p></div>
-                <?php endif; ?>
-            </div>
-
-            <!-- Alojamiento -->
-            <div class="bg-surface-container-lowest p-6 rounded-[2rem] shadow-sm border border-outline-variant/10 relative overflow-hidden group">
-                <div class="relative z-10 h-full flex flex-col justify-between">
-                    <div>
-                        <p class="text-[11px] font-bold uppercase tracking-widest text-outline mb-4">Alojamiento</p>
-                        <?php if ($hotel): ?>
-                        <h3 class="text-xl font-black text-secondary mb-1"><?= htmlspecialchars($hotel['nombre'] ?? $hotel['descripcion'] ?? 'Hotel') ?></h3>
-                        <p class="text-sm font-semibold text-primary mb-3"><?= htmlspecialchars($hotel['tipo'] ?? 'Hospedaje') ?></p>
-                        <?php else: ?>
-                        <h3 class="text-xl font-black text-secondary mb-1">Por confirmar</h3>
-                        <p class="text-sm font-semibold text-primary mb-3">Alojamiento</p>
-                        <?php endif; ?>
-                    </div>
-                    <a href="<?= Router::url('/client/services') ?>" class="mt-6 text-secondary text-sm font-bold flex items-center gap-2 group-hover:translate-x-2 transition-transform">
-                        Ver Detalles <span class="material-symbols-outlined text-base">arrow_forward</span>
-                    </a>
-                </div>
-                <span class="material-symbols-outlined absolute -bottom-6 -right-6 text-[120px] text-slate-100 group-hover:text-cyan-50 transition-colors">hotel</span>
-            </div>
+    <div class="bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-2xl p-5 text-white shadow-lg shadow-emerald-500/20">
+        <div class="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center mb-3">
+            <span class="material-symbols-outlined text-white">paid</span>
         </div>
-
-        <!-- Cuotas + Pasajeros -->
-        <div class="grid grid-cols-1 lg:grid-cols-5 gap-8">
-            <!-- Cronograma de Pagos -->
-            <div class="lg:col-span-3">
-                <h3 class="text-xl font-black text-secondary mb-6 flex items-center gap-3">
-                    <span class="material-symbols-outlined text-primary">receipt_long</span> Cronograma de Cuotas
-                </h3>
-                <?php if (!empty($pagos)): ?>
-                <div class="space-y-3">
-                    <?php foreach ($pagos as $i => $p):
-                        $estadoPago = strtolower($p['estado'] ?? 'pendiente');
-                        $isApproved = $estadoPago === 'aprobado' || $estadoPago === 'pagado';
-                    ?>
-                    <div class="flex items-center justify-between p-5 bg-white border border-slate-100 rounded-3xl hover:shadow-lg transition-all">
-                        <div class="flex items-center gap-4">
-                            <div class="w-14 h-14 rounded-2xl <?= $isApproved ? 'bg-green-100 text-green-600' : 'bg-amber-100 text-amber-600' ?> flex items-center justify-center font-black text-lg">
-                                <span class="material-symbols-outlined"><?= $isApproved ? 'check_circle' : 'schedule' ?></span>
-                            </div>
-                            <div>
-                                <p class="font-bold text-secondary">Cuota <?= str_pad($i + 1, 2, '0', STR_PAD_LEFT) ?></p>
-                                <p class="text-xs text-outline font-medium"><?= date('d M, Y', strtotime($p['fecha_vencimiento'] ?? ($p['fecha_pago'] ?? 'now'))) ?></p>
-                            </div>
-                        </div>
-                        <div class="text-right">
-                            <p class="text-lg font-black text-secondary"><?= fmoney((float)($p['monto'] ?? 0), $moneda) ?></p>
-                            <span class="px-3 py-1 <?= $isApproved ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700' ?> text-[9px] font-black uppercase tracking-widest rounded-lg"><?= ucfirst($estadoPago) ?></span>
-                        </div>
-                    </div>
-                    <?php endforeach; ?>
-                </div>
-                <!-- Barra de progreso -->
-                <div class="bg-white border border-slate-100 rounded-3xl p-6 mt-4">
-                    <div class="flex justify-between text-xs text-outline mb-2">
-                        <span class="font-bold">Progreso de pago</span>
-                        <span class="font-black text-primary"><?= $valor_total > 0 ? round(($total_pagado / $valor_total) * 100) : 0 ?>%</span>
-                    </div>
-                    <div class="w-full h-3 bg-slate-100 rounded-full overflow-hidden">
-                        <div class="h-full bg-gradient-to-r from-primary to-primary-container rounded-full transition-all duration-700" style="width:<?= $valor_total > 0 ? min(100, round(($total_pagado / $valor_total) * 100)) : 0 ?>%"></div>
-                    </div>
-                    <div class="flex justify-between mt-3">
-                        <p class="text-xs text-outline">Pagado: <span class="font-bold text-green-600"><?= fmoney($total_pagado, $moneda) ?></span></p>
-                        <p class="text-xs text-outline">Restante: <span class="font-bold text-secondary"><?= fmoney($saldo, $moneda) ?></span></p>
-                    </div>
-                </div>
-                <?php else: ?>
-                <div class="bg-white border border-slate-100 rounded-3xl p-8 text-center"><p class="text-sm text-outline">Sin cuotas programadas.</p></div>
-                <?php endif; ?>
-            </div>
-
-            <!-- Pasajeros -->
-            <div class="lg:col-span-2">
-                <h3 class="text-xl font-black text-secondary mb-6 flex items-center gap-3">
-                    <span class="material-symbols-outlined text-primary">group</span> Pasajeros (<?= count($pasajeros) ?>)
-                </h3>
-                <?php if (!empty($pasajeros)): ?>
-                <div class="space-y-3">
-                    <?php foreach ($pasajeros as $i => $p):
-                        $ini = strtoupper(substr($p['nombre'] ?? '', 0, 1) . substr($p['apellido'] ?? '', 0, 1));
-                    ?>
-                    <div class="flex items-center gap-4 p-4 bg-white border border-slate-100 rounded-3xl hover:shadow-lg transition-all">
-                        <div class="w-12 h-12 rounded-2xl <?= $i === 0 ? 'bg-primary-container/20 text-primary' : 'bg-secondary-container/20 text-secondary' ?> flex items-center justify-center font-black text-sm"><?= $ini ?></div>
-                        <div class="flex-1 min-w-0">
-                            <p class="font-bold text-secondary truncate"><?= htmlspecialchars(($p['nombre'] ?? '') . ' ' . ($p['apellido'] ?? '')) ?></p>
-                            <p class="text-[10px] text-outline font-medium"><?= htmlspecialchars($p['tipo'] ?? 'Estudiante') ?></p>
-                        </div>
-                        <span class="px-2 py-1 bg-green-100 text-green-700 text-[9px] font-black uppercase tracking-widest rounded-lg shrink-0">OK</span>
-                    </div>
-                    <?php endforeach; ?>
-                </div>
-                <?php else: ?>
-                <div class="bg-white border border-slate-100 rounded-3xl p-8 text-center"><p class="text-sm text-outline">No hay pasajeros registrados.</p></div>
-                <?php endif; ?>
-
-                <!-- Acciones rápidas -->
-                <div class="mt-6 space-y-3">
-                    <a href="<?= Router::url('/client/payments') ?>" class="flex items-center gap-3 p-4 bg-primary text-white rounded-2xl font-bold text-sm hover:brightness-110 transition-all active:scale-95 shadow-lg justify-center">
-                        <span class="material-symbols-outlined">upload_file</span> Subir Comprobante
-                    </a>
-                    <a href="<?= Router::url('/client/services') ?>" class="flex items-center gap-3 p-4 bg-white border border-slate-100 text-secondary rounded-2xl font-bold text-sm hover:shadow-lg transition-all justify-center">
-                        <span class="material-symbols-outlined">explore</span> Ver Servicios
-                    </a>
-                </div>
-            </div>
+        <div class="text-2xl font-black"><?= fmoney($total_pagado) ?></div>
+        <div class="text-xs text-white/70 font-semibold mt-1"><?= $progreso ?>% pagado</div>
+    </div>
+    <div class="bg-gradient-to-br from-turquesa-dark to-turquesa rounded-2xl p-5 text-white shadow-lg shadow-turquesa/20">
+        <div class="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center mb-3">
+            <span class="material-symbols-outlined text-white">group</span>
         </div>
+        <div class="text-2xl font-black"><?= count($pasajeros) ?></div>
+        <div class="text-xs text-white/70 font-semibold mt-1">Pasajeros</div>
+    </div>
+    <div class="bg-gradient-to-br from-petroleo to-petroleo-light rounded-2xl p-5 text-white shadow-lg shadow-petroleo/20">
+        <div class="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center mb-3">
+            <span class="material-symbols-outlined text-white">flight</span>
+        </div>
+        <?php if ($vuelo): ?>
+        <div class="text-sm font-black truncate"><?= htmlspecialchars($vuelo['origen'] ?? '') ?> &rarr; <?= htmlspecialchars($vuelo['destino'] ?? '') ?></div>
+        <?php else: ?>
+        <div class="text-sm text-white/60">Sin vuelo</div>
+        <?php endif; ?>
+        <div class="text-xs text-white/70 font-semibold mt-1">Vuelo</div>
     </div>
 </div>
 
+<!-- CONTENT GRID -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <!-- LEFT: Pasajeros -->
+    <div class="lg:col-span-2 space-y-5">
+        <?php if (!empty($pasajeros)): ?>
+        <div class="bg-white rounded-2xl border border-turquesa/10 shadow-lg overflow-hidden">
+            <div class="px-5 py-4 bg-gradient-to-r from-turquesa-dark/5 to-transparent border-b border-turquesa/10 flex items-center justify-between">
+                <h2 class="font-black text-petroleo flex items-center gap-2 text-lg">
+                    <span class="material-symbols-outlined text-turquesa text-xl" style="font-variation-settings:'FILL' 1">group</span>
+                    Pasajeros del Grupo
+                </h2>
+                <span class="bg-turquesa/15 text-turquesa-dark text-xs font-black px-3 py-1 rounded-full"><?= count($pasajeros) ?></span>
+            </div>
+            <div class="divide-y divide-petroleo/5">
+                <?php 
+                $colors = ['bg-turquesa/15 text-turquesa-dark','bg-coral/15 text-coral-dark','bg-gold/15 text-gold-dark','bg-emerald-100 text-emerald-700','bg-violet-100 text-violet-700','bg-blue-100 text-blue-700','bg-pink-100 text-pink-700'];
+                foreach ($pasajeros as $i => $p): ?>
+                <div class="flex items-center gap-3 px-5 py-3 hover:bg-superficie transition-colors">
+                    <div class="w-10 h-10 rounded-full <?= $colors[$i % count($colors)] ?> flex items-center justify-center font-black text-xs shrink-0 ring-2 ring-white shadow">
+                        <?= strtoupper(substr($p['nombre'] ?? 'P', 0, 1) . substr($p['apellido'] ?? '', 0, 1)) ?>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <p class="font-bold text-petroleo text-sm"><?= htmlspecialchars(($p['nombre'] ?? '') . ' ' . ($p['apellido'] ?? '')) ?></p>
+                        <p class="text-[11px] text-petroleo/40"><?= htmlspecialchars($p['tipo'] ?? 'Pasajero') ?><?= !empty($p['dni']) ? ' &middot; DNI: ' . htmlspecialchars($p['dni']) : '' ?></p>
+                    </div>
+                </div>
+                <?php endforeach; ?>
+            </div>
+        </div>
+        <?php endif; ?>
+
+        <!-- Servicios -->
+        <?php if (!empty($servicios)): ?>
+        <div class="bg-white rounded-2xl border border-turquesa/10 shadow-lg overflow-hidden">
+            <div class="px-5 py-4 bg-gradient-to-r from-turquesa-dark/5 to-transparent border-b border-turquesa/10">
+                <h2 class="font-black text-petroleo flex items-center gap-2 text-lg">
+                    <span class="material-symbols-outlined text-turquesa text-xl" style="font-variation-settings:'FILL' 1">travel_explore</span>
+                    Servicios del Viaje
+                </h2>
+            </div>
+            <div class="divide-y divide-petroleo/5">
+                <?php foreach ($servicios as $s): 
+                    $det = json_decode($s['detalle_json'] ?? $s['detalles_json'] ?? '{}', true);
+                    $titulo = $det['titulo'] ?? ($s['nombre'] ?? $s['servicio_tipo'] ?? 'Servicio');
+                    $tipo = $s['tipo'] ?? $s['servicio_tipo'] ?? '';
+                    $icon = stripos($tipo,'vuelo') !== false ? 'flight' : (stripos($tipo,'hotel') !== false ? 'hotel' : 'luggage');
+                    $iconBg = stripos($tipo,'vuelo') !== false ? 'bg-blue-100 text-blue-600' : (stripos($tipo,'hotel') !== false ? 'bg-purple-100 text-purple-600' : 'bg-turquesa/10 text-turquesa-dark');
+                ?>
+                <div class="flex items-center gap-4 px-5 py-4 hover:bg-superficie transition-colors">
+                    <div class="w-10 h-10 rounded-xl <?= $iconBg ?> flex items-center justify-center shrink-0 shadow-sm">
+                        <span class="material-symbols-outlined" style="font-variation-settings:'FILL' 1"><?= $icon ?></span>
+                    </div>
+                    <div><p class="font-bold text-petroleo text-sm"><?= htmlspecialchars($titulo) ?></p></div>
+                </div>
+                <?php endforeach; ?>
+            </div>
+        </div>
+        <?php endif; ?>
+    </div>
+
+    <!-- RIGHT: Sidebar -->
+    <aside class="space-y-5">
+        <!-- Pago -->
+        <div class="bg-gradient-to-br from-petroleo-dark to-petroleo rounded-2xl p-6 text-white shadow-xl shadow-petroleo/30">
+            <h3 class="font-black mb-1 flex items-center gap-2">
+                <span class="material-symbols-outlined text-turquesa-light" style="font-variation-settings:'FILL' 1">payments</span>Estado de Pago
+            </h3>
+            <div class="text-3xl font-black mb-1 mt-4 text-transparent bg-clip-text bg-gradient-to-r from-turquesa-light to-coral"><?= fmoney($saldo) ?></div>
+            <div class="text-xs text-white/40 mb-4">de <?= fmoney($valor_total) ?></div>
+            <div class="h-3 bg-white/10 rounded-full overflow-hidden mb-4">
+                <div class="h-full bg-gradient-to-r from-turquesa to-turquesa-light rounded-full" style="width:<?= $progreso ?>%"></div>
+            </div>
+            <a href="<?= Router::url('/client/payments') ?>" class="flex items-center justify-center gap-2 w-full py-3 bg-gradient-to-r from-turquesa to-turquesa-dark text-white font-bold rounded-xl hover:shadow-lg hover:shadow-turquesa/40 transition-all active:scale-95">
+                <span class="material-symbols-outlined">receipt_long</span>Ver Pagos
+            </a>
+        </div>
+
+        <!-- WhatsApp -->
+        <a href="https://wa.me/51976324716?text=Hola%20soy%20<?= urlencode($nombre) ?>%20del%20grupo%20<?= urlencode($grupoNombre) ?>" target="_blank"
+           class="flex items-center gap-3 w-full py-4 px-5 bg-gradient-to-r from-green-500 to-green-600 text-white font-bold rounded-2xl shadow-lg hover:shadow-green-500/40 transition-all active:scale-95">
+            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+            WhatsApp
+        </a>
+
+        <!-- Soporte -->
+        <a href="<?= Router::url('/client/soporte') ?>" class="flex items-center gap-3 w-full py-3.5 px-5 bg-white text-petroleo font-bold rounded-xl border border-petroleo/10 shadow-sm hover:shadow-md transition-all">
+            <span class="material-symbols-outlined text-turquesa">support_agent</span>Centro de Soporte
+        </a>
+    </aside>
+</div>
+
 <?php else: ?>
-<div class="bg-white rounded-[2rem] p-12 text-center border border-outline-variant/10 shadow-sm">
-    <span class="material-symbols-outlined text-6xl text-primary-container/30 mb-4 block">description</span>
-    <h2 class="text-2xl font-black text-secondary mb-2">Sin contrato asignado</h2>
-    <p class="text-outline">Tu contrato será asignado por el representante del grupo. Contacta a tu asesor.</p>
+<div class="bg-gradient-to-br from-superficie to-white rounded-2xl p-12 text-center border border-turquesa/10 shadow-lg">
+    <span class="material-symbols-outlined text-6xl text-turquesa/20 mb-4 block">school</span>
+    <h3 class="font-black text-petroleo text-xl mb-2">Sin grupo asignado</h3>
+    <p class="text-sm text-petroleo/40 max-w-md mx-auto mb-6">No se encontr&oacute; un grupo vinculado a tu cuenta. Contacta a tu representante.</p>
+    <a href="https://wa.me/51976324716" target="_blank" class="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-green-500 to-green-600 text-white font-bold rounded-xl transition-all hover:shadow-lg">
+        <span class="material-symbols-outlined">chat</span>Contactar
+    </a>
 </div>
 <?php endif; ?>

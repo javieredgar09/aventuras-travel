@@ -110,17 +110,25 @@
 
             <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
                 <div>
-                    <label class="block text-[10px] uppercase font-bold text-petroleo/70 mb-1 tracking-wider">Valor (USD)</label>
+                    <label class="block text-[10px] uppercase font-bold text-petroleo/70 mb-1 tracking-wider">Moneda del Grupo *</label>
+                    <select name="moneda_grupo" required class="w-full px-2 py-1.5 text-xs rounded border border-petroleo/20 focus:border-turquesa outline-none bg-white">
+                        <option value="USD" selected>USD - Dólares</option>
+                        <option value="PEN">PEN - Soles Peruanos</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-[10px] uppercase font-bold text-petroleo/70 mb-1 tracking-wider">Valor</label>
                     <div class="relative">
-                        <span class="absolute left-2 top-1/2 -translate-y-1/2 font-bold text-petroleo/40 text-xs">$</span>
+                        <span class="absolute left-2 top-1/2 -translate-y-1/2 font-bold text-petroleo/40 text-xs moneda-symbol">$</span>
                         <input type="number" step="0.01" name="valor_total" value="0.00" class="w-full pl-6 pr-2 py-1.5 text-xs rounded border border-petroleo/20 focus:border-turquesa outline-none">
                     </div>
                 </div>
                 
                 <div id="container-deposito">
-                    <label class="block text-[10px] uppercase font-bold text-petroleo/70 mb-1 tracking-wider">Abono Inicial (USD)</label>
+                    <label class="block text-[10px] uppercase font-bold text-petroleo/70 mb-1 tracking-wider">Abono Inicial</label>
                     <div class="relative">
-                        <span class="absolute left-2 top-1/2 -translate-y-1/2 font-bold text-petroleo/40 text-xs">$</span>
+                        <span class="absolute left-2 top-1/2 -translate-y-1/2 font-bold text-petroleo/40 text-xs moneda-symbol">$</span>
                         <input type="number" step="0.01" name="deposito" value="0.00" class="w-full pl-6 pr-2 py-1.5 text-xs rounded border border-petroleo/20 focus:border-turquesa outline-none">
                     </div>
                 </div>
@@ -249,6 +257,23 @@
 
 <!-- Template Javascript -->
 <script>
+// Actualizar símbolo de moneda
+function updateCurrencySymbol() {
+    const monedaSelect = document.querySelector('select[name="moneda_grupo"]');
+    const monedaSymbols = document.querySelectorAll('.moneda-symbol');
+    const symbol = monedaSelect.value === 'PEN' ? 'S/ ' : '$ ';
+    monedaSymbols.forEach(el => el.textContent = symbol);
+}
+
+// Configurar listener para cambios de moneda
+document.addEventListener('DOMContentLoaded', () => {
+    const monedaSelect = document.querySelector('select[name="moneda_grupo"]');
+    if (monedaSelect) {
+        monedaSelect.addEventListener('change', updateCurrencySymbol);
+        updateCurrencySymbol(); // Inicializar
+    }
+});
+
 // Manejar Tipos de Grupo
 function toggleFormType() {
     const isColegio = document.querySelector('input[name="tipo"]:checked').value === 'colegio';
@@ -748,10 +773,12 @@ function searchHotelAPI(btnElement) {
     const inputEl = container.querySelector('.hotel-search-input');
     const query = inputEl.value.trim();
     const dropdown = container.querySelector('.hotel-results-dropdown');
+    
     // Añadir contexto de destino principal si está presente
     const destinoInput = document.querySelector('input[name="destino"]');
     const destinoVal = destinoInput ? destinoInput.value.trim() : '';
     let qParam = query;
+    
     // Si no hay consulta del usuario, usar el destino seleccionado como término de búsqueda
     if ((!query || query.length < 3) && destinoVal) {
         qParam = destinoVal;
@@ -760,45 +787,60 @@ function searchHotelAPI(btnElement) {
     // Si aún no hay término válido, pedir mínimo
     if (!qParam || qParam.length < 2) {
         // mostrar mensaje no intrusivo en el dropdown
-        dropdown.innerHTML = '<div class="p-3 text-xs text-center text-petroleo/60">Escribe el nombre del hotel o selecciona un Destino Principal primero.</div>';
+        dropdown.innerHTML = '<div class="p-3 text-xs text-center text-petroleo/60">Escribe el nombre del hotel (mín. 2 caracteres) o selecciona un Destino Principal primero.</div>';
         dropdown.classList.remove('hidden');
         setTimeout(() => dropdown.classList.add('hidden'), 2500);
         return;
     }
     
     btnElement.innerHTML = '<span class="material-symbols-outlined text-[16px] animate-spin">sync</span>';
-    dropdown.innerHTML = '<div class="p-4 text-xs text-center text-petroleo/60 flex flex-col items-center"><span class="material-symbols-outlined animate-spin mb-1 text-turquesa text-[24px]">sync</span> Buscando en SerpAPI...</div>';
+    dropdown.innerHTML = '<div class="p-4 text-xs text-center text-petroleo/60 flex flex-col items-center"><span class="material-symbols-outlined animate-spin mb-1 text-turquesa text-[24px]">sync</span> Buscando hoteles...</div>';
     dropdown.classList.remove('hidden');
     
     const destCode = document.getElementById('destino-code') ? document.getElementById('destino-code').value : '';
-    fetch('<?= Router::url("/admin/sales/search-hotel") ?>?q=' + encodeURIComponent(qParam) + (destinoVal ? '&dest=' + encodeURIComponent(destinoVal) : '') + (destCode ? '&dest_code=' + encodeURIComponent(destCode) : ''))
+    const urlParams = new URLSearchParams();
+    urlParams.append('q', qParam);
+    if (destinoVal) urlParams.append('dest', destinoVal);
+    if (destCode) urlParams.append('dest_code', destCode);
+    
+    fetch('<?= Router::url("/admin/sales/search-hotel") ?>?' + urlParams.toString())
     .then(res => res.json())
     .then(data => {
+        btnElement.innerHTML = '<span class="material-symbols-outlined text-[16px]">search</span>';
+        
         if(data.success && data.hoteles && data.hoteles.length > 0) {
             dropdown.innerHTML = '';
-            data.hoteles.forEach(h => {
+            data.hoteles.forEach((h, idx) => {
                 let div = document.createElement('div');
-                div.className = 'p-3 hover:bg-humo cursor-pointer transition-colors';
-                div.innerHTML = `<div class="font-bold text-sm text-petroleo leading-tight">${h.nombre}</div><div class="text-[10px] text-turquesa-dark flex items-center gap-1 mt-1"><span class="material-symbols-outlined text-[12px]">star</span> Rating: ${h.rating || 'N/A'}</div>`;
+                div.className = 'p-3 hover:bg-humo cursor-pointer transition-colors border-b border-petroleo/5 last:border-0';
+                
+                const ratingHtml = h.rating ? `<div class="text-[10px] text-turquesa-dark flex items-center gap-1 mt-1"><span class="material-symbols-outlined text-[12px]">star</span> ${h.rating}</div>` : '';
+                div.innerHTML = `<div class="font-bold text-sm text-petroleo leading-tight">${h.nombre}</div>${ratingHtml}`;
+                
                 div.onclick = function() {
                     container.querySelector('.h-name-input').value = h.nombre;
                     inputEl.value = h.nombre;
                     dropdown.classList.add('hidden');
+                    // Trigger event para sincronizar con array serializado
+                    const inputField = container.querySelector('[data-field="nombre"]');
+                    if (inputField) inputField.value = h.nombre;
                 };
                 dropdown.appendChild(div);
             });
+            dropdown.classList.remove('hidden');
         } else {
-            dropdown.innerHTML = `<div class="p-3 text-xs text-center text-red-500">${data.error || "No se encontraron hoteles."}</div>`;
-            setTimeout(() => dropdown.classList.add('hidden'), 3000);
+            let errMsg = data.error || "No se encontraron hoteles. Intenta con otro término de búsqueda.";
+            dropdown.innerHTML = `<div class="p-3 text-xs text-center text-red-500 font-bold">${errMsg}</div>`;
+            dropdown.classList.remove('hidden');
+            setTimeout(() => dropdown.classList.add('hidden'), 4000);
         }
     })
     .catch(err => {
-        console.error(err);
-        dropdown.innerHTML = `<div class="p-3 text-xs text-center text-red-500">Error de conexión.</div>`;
-        setTimeout(() => dropdown.classList.add('hidden'), 3000);
-    })
-    .finally(() => {
         btnElement.innerHTML = '<span class="material-symbols-outlined text-[16px]">search</span>';
+        console.error('Hotel search error:', err);
+        dropdown.innerHTML = `<div class="p-3 text-xs text-center text-red-500">Error conectando con la API. Intenta nuevamente.</div>`;
+        dropdown.classList.remove('hidden');
+        setTimeout(() => dropdown.classList.add('hidden'), 3000);
     });
 }
 

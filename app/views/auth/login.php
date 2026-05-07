@@ -1,15 +1,15 @@
 <!-- LOGIN UNIFICADO – admin y clientes en uno solo -->
-<div class="w-full max-w-md">
-    <div class="bg-white/90 backdrop-blur-xl rounded-3xl shadow-2xl p-10 animate-fadeInUp">
+<div class="w-full max-w-md px-4 sm:px-0">
+    <div class="bg-white/90 backdrop-blur-xl rounded-2xl sm:rounded-3xl shadow-2xl p-6 sm:p-8 md:p-10 animate-fadeInUp">
         <!-- Logo -->
         <div class="flex justify-center mb-6">
             <div class="w-16 h-16 bg-petroleo rounded-2xl flex items-center justify-center shadow-lg">
-                <img src="/aventuras/img/sin_fondo.png" alt="Logo" class="h-10 brightness-0 invert">
+                <img src="<?= Router::url('/img/sin_fondo.png') ?>" alt="Logo" class="h-10 brightness-0 invert">
             </div>
         </div>
 
-        <h1 class="text-3xl font-black text-center text-petroleo mb-1">Aventuras Travel</h1>
-        <p class="text-center text-petroleo/50 text-sm mb-8">Gestiona tu próxima gran aventura</p>
+        <h1 class="text-2xl sm:text-3xl font-black text-center text-petroleo mb-1">Aventuras Travel</h1>
+        <p class="text-center text-petroleo/50 text-sm mb-6 sm:mb-8">Gestiona tu próxima gran aventura</p>
 
         <?php if (isset($flash) && $flash): ?>
         <div class="p-3 rounded-xl text-sm font-medium mb-6 <?= $flash['type'] === 'error' ? 'bg-red-50 text-red-700 border border-red-200' : 'bg-emerald-50 text-emerald-700 border border-emerald-200' ?>">

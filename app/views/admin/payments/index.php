@@ -51,9 +51,9 @@ foreach ($awaiting as $a) {
 ?>
 
 <!-- Header -->
-<div class="flex flex-col sm:flex-row justify-between items-start gap-4 mb-8">
+<div class="flex flex-col sm:flex-row justify-between items-start gap-3 sm:gap-4 mb-6 sm:mb-8">
     <div>
-        <h1 class="text-3xl font-black text-petroleo">Gestión de Pagos</h1>
+        <h1 class="text-2xl sm:text-3xl font-black text-petroleo">Gestión de Pagos</h1>
         <p class="text-petroleo/60 text-sm mt-1">Organiza, valida y registra pagos por grupo.</p>
     </div>
     <button onclick="document.getElementById('modal-registrar').classList.remove('hidden')" class="flex items-center gap-2 px-5 py-2.5 bg-turquesa text-white font-bold text-sm rounded-xl hover:bg-turquesa-dark transition-colors shadow-lg shadow-turquesa/20">
@@ -67,13 +67,13 @@ foreach ($awaiting as $a) {
     <div class="bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-2xl p-5 text-white shadow-lg shadow-indigo-500/20 relative overflow-hidden">
         <div class="absolute -right-4 -top-4 w-20 h-20 bg-white/10 rounded-full"></div>
         <p class="text-[10px] font-bold uppercase tracking-widest text-indigo-100 mb-1">Volumen del Mes</p>
-        <p class="text-3xl font-black">S/ <?= number_format($monthlyVolume, 2) ?></p>
+        <p class="text-3xl font-black">$ <?= number_format($monthlyVolume, 2) ?></p>
     </div>
     <div class="bg-white rounded-2xl p-5 border border-petroleo/5 shadow-sm">
         <p class="text-[10px] uppercase tracking-widest font-bold text-petroleo/50 mb-1 flex items-center gap-1">
             <span class="material-symbols-outlined text-emerald-500 text-sm">account_balance_wallet</span> Total Recaudado
         </p>
-        <p class="text-3xl font-black text-petroleo">S/ <?= number_format($totalApproved, 2) ?></p>
+        <p class="text-3xl font-black text-petroleo">$ <?= number_format($totalApproved, 2) ?></p>
     </div>
     <div class="bg-white rounded-2xl p-5 border border-petroleo/5 shadow-sm">
         <p class="text-[10px] uppercase tracking-widest font-bold text-petroleo/50 mb-1 flex items-center gap-1">
@@ -100,31 +100,88 @@ foreach ($awaiting as $a) {
     </h2>
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <?php foreach ($awaiting as $p): ?>
+        <?php
+            $tipoLabel  = match($p['grupo_tipo'] ?? '') { 'familiar' => 'Familiar', 'escolar' => 'Escolar', 'colegio' => 'Escolar', default => 'Contrato' };
+            $tipoCss    = in_array($p['grupo_tipo'] ?? '', ['familiar']) ? 'blue-100 text-blue-700' : 'purple-100 text-purple-700';
+            $metodo     = $p['metodo_pago'] ?? '';
+            $banco      = $p['banco'] ?? '';
+            $moneda     = $p['moneda_pago'] ?? 'USD';
+            $clienteEmail = $p['cliente_email'] ?? $p['titular_correo'] ?? '';
+        ?>
         <div class="bg-white rounded-xl p-4 border border-amber-100 shadow-sm">
+            <!-- Header: tipo + nombre + monto -->
             <div class="flex justify-between items-start mb-3">
-                <div>
-                    <span class="text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 rounded bg-<?= ($p['grupo_tipo'] ?? '') === 'familiar' ? 'blue-100 text-blue-700' : 'purple-100 text-purple-700' ?>">
-                        <?= htmlspecialchars($p['grupo_tipo'] ?? 'contrato') ?>
-                    </span>
-                    <p class="font-bold text-petroleo mt-1"><?= htmlspecialchars($p['cliente_nombre'] ?? 'Cliente') ?></p>
-                    <p class="text-xs text-petroleo/50"><?= htmlspecialchars($p['grupo_nombre'] ?? '') ?> · <?= htmlspecialchars($p['contrato_codigo'] ?? '') ?></p>
-                    <p class="text-xs text-petroleo/40 mt-0.5"><?= htmlspecialchars($p['concepto']) ?> · <?= date('d M H:i', strtotime($p['created_at'])) ?></p>
+                <div class="flex-1 min-w-0 mr-4">
+                    <div class="flex items-center gap-2 flex-wrap mb-1">
+                        <span class="text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 rounded bg-<?= $tipoCss ?>">
+                            <?= htmlspecialchars($tipoLabel) ?>
+                        </span>
+                        <?php if ($metodo): ?>
+                        <span class="text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 rounded bg-petroleo/5 text-petroleo/60">
+                            <?= htmlspecialchars($metodo) ?><?= $banco ? ' · ' . htmlspecialchars($banco) : '' ?>
+                        </span>
+                        <?php endif; ?>
+                        <span class="text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 rounded bg-petroleo/5 text-petroleo/60">
+                            <?= htmlspecialchars($moneda) ?>
+                        </span>
+                    </div>
+                    <p class="font-bold text-petroleo text-sm truncate">
+                        <?= htmlspecialchars($p['cliente_nombre'] ?? 'Cliente') ?>
+                    </p>
+                    <?php if ($clienteEmail): ?>
+                    <p class="text-[11px] text-petroleo/40"><?= htmlspecialchars($clienteEmail) ?></p>
+                    <?php endif; ?>
+                    <p class="text-xs text-petroleo/50 mt-0.5">
+                        <?= htmlspecialchars($p['grupo_nombre'] ?? '—') ?> &nbsp;·&nbsp;
+                        <strong><?= htmlspecialchars($p['contrato_codigo'] ?? '—') ?></strong>
+                    </p>
+                    <p class="text-xs text-petroleo/40 mt-0.5 truncate"><?= htmlspecialchars($p['concepto']) ?></p>
+                    <p class="text-[10px] text-petroleo/30 mt-0.5"><?= date('d M Y, H:i', strtotime($p['created_at'])) ?></p>
                 </div>
-                <p class="text-2xl font-black text-petroleo">S/ <?= number_format($p['monto'], 2) ?></p>
+                <div class="text-right flex-shrink-0">
+                    <p class="text-2xl font-black text-petroleo">$ <?= number_format($p['monto'], 2) ?></p>
+                    <?php if (!empty($p['excedente']) && (float)$p['excedente'] > 0): ?>
+                    <p class="text-[10px] text-amber-600">Excedente: $<?= number_format($p['excedente'], 2) ?></p>
+                    <?php endif; ?>
+                </div>
             </div>
-            <div class="flex items-center gap-2 pt-3 border-t border-petroleo/5">
+
+            <!-- Actions -->
+            <div class="pt-3 border-t border-petroleo/5 space-y-2">
                 <?php if (!empty($p['comprobante_url'])): ?>
-                <a href="<?= Router::url('/storage/comprobantes/' . $p['comprobante_url']) ?>" target="_blank" class="flex-1 py-2 text-center text-xs font-bold text-petroleo border border-petroleo/10 rounded-lg hover:bg-superficie transition-colors">
+                <a href="<?= Router::url('/storage/comprobantes/' . $p['comprobante_url']) ?>" target="_blank"
+                   class="flex items-center justify-center gap-1.5 w-full py-2 text-center text-xs font-bold text-petroleo border border-petroleo/10 rounded-lg hover:bg-superficie transition-colors">
+                    <span class="material-symbols-outlined text-sm">attach_file</span>
                     Ver Comprobante
                 </a>
+                <?php else: ?>
+                <p class="text-[10px] text-center text-petroleo/30 py-1">Sin comprobante adjunto</p>
                 <?php endif; ?>
-                <form action="<?= Router::url('/admin/payments/approve/' . $p['id']) ?>" method="POST" class="flex-1" data-confirm="¿Aprobar pago de S/ <?= number_format($p['monto'], 2) ?>? Las cuotas se actualizarán en cascada.">
+
+                <div class="flex gap-2">
+                    <form action="<?= Router::url('/admin/payments/approve/' . $p['id']) ?>" method="POST" class="flex-1"
+                          data-confirm="¿Aprobar el pago de $ <?= number_format($p['monto'], 2) ?> de <?= htmlspecialchars($p['cliente_nombre'] ?? 'este cliente') ?>? Las cuotas se actualizarán en cascada.">
+                        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token ?? '') ?>">
+                        <button type="submit" class="w-full py-2 text-center text-xs font-bold text-white bg-emerald-500 rounded-lg hover:bg-emerald-600 transition-colors flex items-center justify-center gap-1">
+                            <span class="material-symbols-outlined text-sm">check_circle</span> Aprobar
+                        </button>
+                    </form>
+                    <button type="button"
+                            onclick="document.getElementById('reject-form-<?= $p['id'] ?>').classList.toggle('hidden')"
+                            class="flex-1 py-2 text-center text-xs font-bold text-white bg-red-500 rounded-lg hover:bg-red-600 transition-colors flex items-center justify-center gap-1">
+                        <span class="material-symbols-outlined text-sm">cancel</span> Rechazar
+                    </button>
+                </div>
+
+                <!-- Reject form (hidden by default) -->
+                <form id="reject-form-<?= $p['id'] ?>" action="<?= Router::url('/admin/payments/reject/' . $p['id']) ?>" method="POST" class="hidden">
                     <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token ?? '') ?>">
-                    <button type="submit" class="w-full py-2 text-center text-xs font-bold text-white bg-emerald-500 rounded-lg hover:bg-emerald-600 transition-colors">Aprobar</button>
-                </form>
-                <form action="<?= Router::url('/admin/payments/reject/' . $p['id']) ?>" method="POST" class="flex-1" data-confirm="¿Rechazar este pago?">
-                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token ?? '') ?>">
-                    <button type="submit" class="w-full py-2 text-center text-xs font-bold text-white bg-red-500 rounded-lg hover:bg-red-600 transition-colors">Rechazar</button>
+                    <textarea name="notas_rechazo" rows="2" placeholder="Motivo del rechazo (se notificará al cliente)..."
+                              class="w-full bg-superficie border-none rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-red-400/30 resize-none mb-2"
+                              required></textarea>
+                    <button type="submit" class="w-full py-2 text-center text-xs font-bold text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors">
+                        Confirmar Rechazo y Notificar
+                    </button>
                 </form>
             </div>
         </div>
@@ -132,6 +189,7 @@ foreach ($awaiting as $a) {
     </div>
 </div>
 <?php endif; ?>
+
 
 <!-- Tabs: Familiar / Escolar -->
 <div class="mb-6">
@@ -188,7 +246,7 @@ foreach ($awaiting as $a) {
                 <div class="flex items-center gap-6">
                     <div class="text-right hidden sm:block">
                         <p class="text-xs text-petroleo/40">Pagado / Total</p>
-                        <p class="font-bold text-petroleo">S/ <?= number_format($totalPagado, 2) ?> <span class="text-petroleo/30">/ <?= number_format($valorTotal, 2) ?></span></p>
+                        <p class="font-bold text-petroleo">$ <?= number_format($totalPagado, 2) ?> <span class="text-petroleo/30">/ <?= number_format($valorTotal, 2) ?></span></p>
                     </div>
                     <div class="w-24 hidden sm:block">
                         <div class="h-2 bg-petroleo/5 rounded-full overflow-hidden">
@@ -228,8 +286,8 @@ foreach ($awaiting as $a) {
                             </div>
                         </div>
                         <div class="text-right w-28">
-                            <p class="text-sm font-bold text-petroleo">S/ <?= number_format($pagado, 2) ?></p>
-                            <p class="text-[10px] text-petroleo/40">de S/ <?= number_format($esperado, 2) ?></p>
+                            <p class="text-sm font-bold text-petroleo">$ <?= number_format($pagado, 2) ?></p>
+                            <p class="text-[10px] text-petroleo/40">de $ <?= number_format($esperado, 2) ?></p>
                         </div>
                         <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase <?= $cuotaEstado === 'pagada' ? 'bg-emerald-100 text-emerald-700' : ($cuotaEstado === 'parcial' ? 'bg-amber-100 text-amber-700' : 'bg-petroleo/5 text-petroleo/40') ?>">
                             <?= $cuotaEstado ?>
@@ -261,10 +319,24 @@ foreach ($awaiting as $a) {
                             </div>
                         </div>
                         <div class="flex items-center gap-3">
-                            <span class="font-bold text-petroleo">S/ <?= number_format($t['monto'], 2) ?></span>
+                            <span class="font-bold text-petroleo">$ <?= number_format($t['monto'], 2) ?></span>
                             <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase <?= $t['estado'] === 'aprobado' ? 'bg-emerald-100 text-emerald-700' : ($t['estado'] === 'rechazado' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700') ?>">
                                 <?= $t['estado'] ?>
                             </span>
+                            <?php if ($t['estado'] === 'aprobado' && !empty($t['recibo_url'])): ?>
+                            <a href="<?= Router::url('/descargar-recibo.php?id=' . $t['id'] . '&mode=inline') ?>" title="Ver Recibo" target="_blank"
+                               class="w-7 h-7 rounded-lg bg-emerald-100 hover:bg-emerald-200 flex items-center justify-center transition-colors">
+                                <span class="material-symbols-outlined text-emerald-600 text-sm">picture_as_pdf</span>
+                            </a>
+                            <form method="POST" action="<?= Router::url('/admin/payments/' . $t['id'] . '/regenerate') ?>" style="display:inline;" 
+                                  onsubmit="return confirm('¿Regenerar recibo de $<?= number_format($t['monto'], 2) ?>?');">
+                                <input type="hidden" name="_token" value="<?= $csrf_token ?>">
+                                <button type="submit" title="Regenerar Recibo" 
+                                        class="w-7 h-7 rounded-lg bg-blue-100 hover:bg-blue-200 flex items-center justify-center transition-colors">
+                                    <span class="material-symbols-outlined text-blue-600 text-sm">refresh</span>
+                                </button>
+                            </form>
+                            <?php endif; ?>
                         </div>
                     </div>
                     <?php endforeach; ?>
@@ -313,7 +385,7 @@ foreach ($awaiting as $a) {
                 <div class="flex items-center gap-6">
                     <div class="text-right hidden sm:block">
                         <p class="text-xs text-petroleo/40">Pagado / Total</p>
-                        <p class="font-bold text-petroleo">S/ <?= number_format($totalPagado, 2) ?> <span class="text-petroleo/30">/ <?= number_format($valorTotal, 2) ?></span></p>
+                        <p class="font-bold text-petroleo">$ <?= number_format($totalPagado, 2) ?> <span class="text-petroleo/30">/ <?= number_format($valorTotal, 2) ?></span></p>
                     </div>
                     <div class="w-24 hidden sm:block">
                         <div class="h-2 bg-petroleo/5 rounded-full overflow-hidden">
@@ -355,8 +427,8 @@ foreach ($awaiting as $a) {
                         </div>
                         <div class="flex items-center gap-4">
                             <div class="text-right">
-                                <p class="font-bold text-sm text-petroleo">S/ <?= number_format($cPagado, 2) ?> <span class="text-petroleo/30 font-normal">/ <?= number_format($cValor, 2) ?></span></p>
-                                <p class="text-[10px] text-petroleo/40">Saldo: S/ <?= number_format($cSaldo, 2) ?></p>
+                                <p class="font-bold text-sm text-petroleo">$ <?= number_format($cPagado, 2) ?> <span class="text-petroleo/30 font-normal">/ <?= number_format($cValor, 2) ?></span></p>
+                                <p class="text-[10px] text-petroleo/40">Saldo: $ <?= number_format($cSaldo, 2) ?></p>
                             </div>
                             <div class="w-16 hidden sm:block">
                                 <div class="h-1.5 bg-petroleo/5 rounded-full overflow-hidden">
@@ -394,8 +466,8 @@ foreach ($awaiting as $a) {
                                 </div>
                             </div>
                             <div class="text-right w-24">
-                                <p class="text-xs font-bold text-petroleo">S/ <?= number_format($pagado, 2) ?></p>
-                                <p class="text-[10px] text-petroleo/40">de S/ <?= number_format($esperado, 2) ?></p>
+                                <p class="text-xs font-bold text-petroleo">$ <?= number_format($pagado, 2) ?></p>
+                                <p class="text-[10px] text-petroleo/40">de $ <?= number_format($esperado, 2) ?></p>
                             </div>
                             <span class="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase <?= $cuotaEstado === 'pagada' ? 'bg-emerald-100 text-emerald-700' : ($cuotaEstado === 'parcial' ? 'bg-amber-100 text-amber-700' : 'bg-petroleo/5 text-petroleo/40') ?>">
                                 <?= $cuotaEstado ?>
@@ -421,7 +493,23 @@ foreach ($awaiting as $a) {
                                 <span class="text-petroleo"><?= htmlspecialchars($t['concepto']) ?></span>
                                 <span class="text-petroleo/30"><?= date('d M Y', strtotime($t['created_at'])) ?></span>
                             </div>
-                            <span class="font-bold text-petroleo">S/ <?= number_format($t['monto'], 2) ?></span>
+                            <div class="flex items-center gap-2">
+                                <span class="font-bold text-petroleo">$ <?= number_format($t['monto'], 2) ?></span>
+                                <?php if ($t['estado'] === 'aprobado' && !empty($t['recibo_url'])): ?>
+                                <a href="<?= Router::url('/descargar-recibo.php?id=' . $t['id'] . '&mode=inline') ?>" title="Ver Recibo" target="_blank"
+                                   class="w-6 h-6 rounded bg-emerald-100 hover:bg-emerald-200 flex items-center justify-center transition-colors">
+                                    <span class="material-symbols-outlined text-emerald-600 text-xs">picture_as_pdf</span>
+                                </a>
+                                <form method="POST" action="<?= Router::url('/admin/payments/' . $t['id'] . '/regenerate') ?>" style="display:inline;"
+                                      onsubmit="return confirm('¿Regenerar recibo?');">
+                                    <input type="hidden" name="_token" value="<?= $csrf_token ?>">
+                                    <button type="submit" title="Regenerar Recibo" 
+                                            class="w-6 h-6 rounded bg-blue-100 hover:bg-blue-200 flex items-center justify-center transition-colors">
+                                        <span class="material-symbols-outlined text-blue-600 text-xs">refresh</span>
+                                    </button>
+                                </form>
+                                <?php endif; ?>
+                            </div>
                         </div>
                         <?php endforeach; ?>
                     </div>
@@ -470,7 +558,7 @@ foreach ($awaiting as $a) {
                     </div>
                     <div class="flex justify-between items-center mt-2 px-1">
                         <button type="button" id="btn-select-all" class="text-xs text-turquesa font-bold hover:underline">Seleccionar todas</button>
-                        <p class="text-xs text-petroleo/50">Total seleccionado: <span id="cuotas-total" class="font-bold text-petroleo">S/ 0.00</span></p>
+                        <p class="text-xs text-petroleo/50">Total seleccionado: <span id="cuotas-total" class="font-bold text-petroleo">$ 0.00</span></p>
                     </div>
                 </div>
 
@@ -484,7 +572,7 @@ foreach ($awaiting as $a) {
 
                 <div class="grid grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-xs font-bold uppercase tracking-widest text-petroleo/50 mb-1">Monto (S/)</label>
+                        <label class="block text-xs font-bold uppercase tracking-widest text-petroleo/50 mb-1">Monto (USD $)</label>
                         <input type="number" name="monto" id="reg-monto" step="0.01" min="0.01" required class="w-full bg-superficie border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-turquesa/30" placeholder="0.00">
                         <p id="monto-hint" class="text-[10px] text-petroleo/40 mt-1 hidden">Si supera la cuota seleccionada, el excedente se aplica a la siguiente.</p>
                     </div>
@@ -591,7 +679,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const btnSelectAll = document.getElementById('btn-select-all');
 
     function formatMoney(n) {
-        return 'S/ ' + Number(n).toFixed(2);
+        return '$ ' + Number(n).toFixed(2);
     }
 
     function renderCuotas(cuotas) {

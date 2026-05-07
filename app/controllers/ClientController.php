@@ -298,11 +298,35 @@ class ClientController extends Controller {
             'csrf_token' => $this->generateCsrfToken(),
             'flash'      => $this->getFlash(),
         ];
+
+        // Fetch contract documents, vouchers, and comprobantes per payment
+        $archivosContrato = [];
+        $vouchersContrato = [];
+        foreach ($contratos as $c) {
+            $archivosContrato[$c['id']] = $this->db->fetchAll(
+                "SELECT * FROM archivos WHERE contrato_id = ? ORDER BY tipo, created_at DESC", [$c['id']]
+            );
+            $vouchersContrato[$c['id']] = $this->db->fetchAll(
+                "SELECT * FROM vouchers WHERE tipo_entidad = 'contrato' AND entidad_id = ? ORDER BY fecha_subida DESC", [$c['id']]
+            );
+        }
+
+        // Fetch comprobantes for each pago
+        foreach ($data['pagos'] as &$pg) {
+            $pg['comprobantes'] = $this->db->fetchAll(
+                "SELECT * FROM comprobantes WHERE pago_id = ? ORDER BY created_at DESC", [$pg['id']]
+            );
+        }
+        unset($pg);
+
+        $data['archivos']  = $archivosContrato;
+        $data['vouchers']  = $vouchersContrato;
+
         $this->render('client/payments', $data, 'client');
     }
 
     /**
-     * Registrar nuevo pago (Flexible)
+     * Registrar nuevo pago (Familiar o Colegio – queda pendiente de validación admin)
      */
     public function registerPayment(): void {
         if (!$this->verifyCsrfToken()) {
@@ -311,9 +335,28 @@ class ClientController extends Controller {
             return;
         }
 
+        $user       = $this->auth();
         $contratoId = (int)$this->input('contrato_id');
-        $monto = (float)$this->input('monto');
-        $concepto = $this->input('concepto', 'Abono a cuenta');
+        $monto      = (float)$this->input('monto');
+        $concepto   = trim($this->input('concepto', 'Abono a cuenta'));
+        $metodoPago = $this->input('metodo_pago', 'Efectivo');
+        $banco      = $this->input('banco', '');
+        $monedaPago = $this->input('moneda_pago', 'PEN');
+
+        // Validaciones básicas
+        $metodosValidos = ['Efectivo', 'Transferencia bancaria', 'Depósito bancario', 'Yape', 'Plin'];
+        if (!in_array($metodoPago, $metodosValidos)) $metodoPago = 'Efectivo';
+
+        $bancosValidos = ['BCP', 'BBVA Continental', 'Interbank', 'Scotiabank', ''];
+        if (!in_array($banco, $bancosValidos)) $banco = '';
+
+        if (!in_array($monedaPago, ['PEN', 'USD'])) $monedaPago = 'PEN';
+
+        if ($contratoId <= 0) {
+            $this->flash('error', 'Debe seleccionar un contrato.');
+            $this->redirect('/client/payments');
+            return;
+        }
 
         if ($monto <= 0) {
             $this->flash('error', 'El monto debe ser mayor a 0.');
@@ -322,57 +365,60 @@ class ClientController extends Controller {
         }
 
         if (empty($_FILES['comprobante']) || $_FILES['comprobante']['error'] !== UPLOAD_ERR_OK) {
-            $this->flash('error', 'Debe adjuntar un comprobante de pago.');
+            $this->flash('error', 'Debe adjuntar un comprobante de pago (PDF, JPG o PNG).');
             $this->redirect('/client/payments');
             return;
         }
 
-        $file = $_FILES['comprobante'];
+        $file         = $_FILES['comprobante'];
         $allowedTypes = ['application/pdf', 'image/jpeg', 'image/png'];
-        $maxSize = 5 * 1024 * 1024; // 5MB
+        $maxSize      = 5 * 1024 * 1024;
 
-        if (!in_array($file['type'], $allowedTypes)) {
+        $finfo    = new finfo(FILEINFO_MIME_TYPE);
+        $realMime = $finfo->file($file['tmp_name']);
+        if (!in_array($realMime, $allowedTypes)) {
             $this->flash('error', 'Tipo de archivo no permitido. Solo PDF, JPG, PNG.');
             $this->redirect('/client/payments');
             return;
         }
-
         if ($file['size'] > $maxSize) {
             $this->flash('error', 'El archivo excede el tamaño máximo de 5MB.');
             $this->redirect('/client/payments');
             return;
         }
 
-        // Guardar archivo
-        $hash = bin2hex(random_bytes(16));
-        $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
-        $newName = $hash . '.' . $extension;
+        // Guardar archivo comprobante
+        $hash        = bin2hex(random_bytes(16));
+        $extension   = pathinfo($file['name'], PATHINFO_EXTENSION);
+        $newName     = $hash . '.' . $extension;
         $storagePath = STORAGE_PATH . '/comprobantes';
-
-        if (!is_dir($storagePath)) {
-            mkdir($storagePath, 0755, true);
-        }
-
+        if (!is_dir($storagePath)) mkdir($storagePath, 0755, true);
         move_uploaded_file($file['tmp_name'], $storagePath . '/' . $newName);
 
-        // Registrar pago (como transacción pendiente)
-        $pagoModel = new Pago();
-        $pagoModel->create([
-            'contrato_id'       => $contratoId,
-            'entidad_tipo'      => 'contrato',
-            'monto'             => $monto,
-            'concepto'          => $concepto,
-            'estado'            => 'pendiente',
-            'comprobante_url'   => $newName,
-            'fecha_vencimiento' => date('Y-m-d'),
-        ]);
+        // Usar PaymentService para registrar correctamente con grupo_id y notificar admin
+        require_once __DIR__ . '/../services/PaymentService.php';
+        $svc = new PaymentService();
+        $ok  = $svc->registerClientPayment(
+            $contratoId,
+            $monto,
+            $concepto,
+            $newName,
+            $metodoPago,
+            $banco,
+            $monedaPago,
+            (int)$user['id']
+        );
 
-        $this->flash('exito', 'Pago registrado exitosamente. Será revisado por el equipo.');
+        if ($ok) {
+            $this->flash('exito', '✅ Comprobante enviado correctamente. El equipo de Aventuras Travel revisará tu pago y recibirás una notificación al aprobar.');
+        } else {
+            $this->flash('error', 'Error al registrar el pago. Inténtalo de nuevo.');
+        }
         $this->redirect('/client/payments');
     }
 
     /**
-     * Dashboard del representante (grupo)
+     * Dashboard del representante (grupo) — vista completa de contratos y pagos
      */
     public function leaderDashboard(): void {
         $user = $this->auth();
@@ -383,45 +429,101 @@ class ClientController extends Controller {
 
         $grupoModel = new Grupo();
         $contratoModel = new Contrato();
+        $cuotaModel = new Cuota();
         $notifModel = new Notificacion();
 
         $grupos = $grupoModel->getByRepresentante($user['id']);
-        $contratos = [];
-        $contrato = null;
+        $allContratos = [];
 
-        if (!empty($grupos)) {
-            $contratos = $contratoModel->getByGrupoId($grupos[0]['id']);
-            if (!empty($contratos)) {
-                $contrato = $contratoModel->getFullDetails($contratos[0]['id']);
+        // Recopilar contratos de TODOS los grupos del representante
+        foreach ($grupos as $grupo) {
+            $gContratos = $contratoModel->getByGrupoId($grupo['id']);
+            foreach ($gContratos as &$c) {
+                $c['grupo_nombre'] = $grupo['nombre'];
+                $c['grupo_destino'] = $grupo['destino'] ?? '';
+
+                // Enriquecer con datos de pasajeros
+                $c['pasajeros'] = $this->db->fetchAll(
+                    "SELECT * FROM pasajeros WHERE contrato_id = ? ORDER BY tipo, nombre", [$c['id']]
+                );
+
+                // Nombre del titular
+                if (empty($c['titular_nombre']) && !empty($c['cliente_id'])) {
+                    $cli = $this->db->fetchOne(
+                        "SELECT u.nombre, u.apellido FROM clientes cl JOIN usuarios u ON cl.usuario_id = u.id WHERE cl.id = ?",
+                        [$c['cliente_id']]
+                    );
+                    if ($cli) {
+                        $c['titular_nombre'] = trim($cli['nombre'] . ' ' . $cli['apellido']);
+                    }
+                }
+
+                // Resumen de cuotas
+                $sum = $cuotaModel->getSummary('contrato', $c['id']);
+                $c['cuota_esperada'] = $sum['suma_esperada'];
+                $c['cuota_pagada'] = $sum['suma_pagada'];
+                $c['cuota_pendiente'] = $sum['suma_pendiente'];
+                $c['total_cuotas'] = $sum['total_cuotas'];
+
+                // Cuotas vencidas (atrasadas)
+                $vencidas = $this->db->fetchOne(
+                    "SELECT COUNT(*) as cnt FROM plan_cuotas 
+                     WHERE tipo_entidad = 'contrato' AND entidad_id = ? 
+                     AND estado != 'pagada' AND fecha_vencimiento < CURDATE()",
+                    [$c['id']]
+                );
+                $c['cuotas_vencidas'] = (int)($vencidas['cnt'] ?? 0);
+
+                // Estado de pago derivado
+                if ($sum['suma_esperada'] > 0 && $sum['suma_pendiente'] <= 0) {
+                    $c['estado_pago'] = 'pagado';
+                } elseif ($c['cuotas_vencidas'] > 0) {
+                    $c['estado_pago'] = 'atrasado';
+                } elseif ($sum['suma_pagada'] > 0) {
+                    $c['estado_pago'] = 'parcial';
+                } else {
+                    $c['estado_pago'] = 'pendiente';
+                }
+
+                // Porcentaje pagado
+                $c['pct_pagado'] = $sum['suma_esperada'] > 0
+                    ? round(($sum['suma_pagada'] / $sum['suma_esperada']) * 100)
+                    : 0;
             }
+            unset($c);
+            $allContratos = array_merge($allContratos, $gContratos);
         }
 
-        // Stats
-        $totalContracts = count($contratos);
+        // Estadísticas globales
+        $totalContratos = count($allContratos);
         $paidCount = 0;
         $pendingCount = 0;
         $overdueCount = 0;
-        if ($contrato && !empty($contrato['pagos'])) {
-            foreach ($contrato['pagos'] as $p) {
-                if ($p['estado'] === 'aprobado') $paidCount++;
-                elseif ($p['estado'] === 'pendiente') $pendingCount++;
-                elseif ($p['estado'] === 'atrasado') $overdueCount++;
-            }
+        $totalRecaudado = 0;
+        $totalDeuda = 0;
+        foreach ($allContratos as $c) {
+            $totalRecaudado += $c['cuota_pagada'];
+            $totalDeuda += $c['cuota_esperada'];
+            if ($c['estado_pago'] === 'pagado') $paidCount++;
+            elseif ($c['estado_pago'] === 'atrasado') $overdueCount++;
+            else $pendingCount++;
         }
 
         $notificaciones = $notifModel->getUnreadByUser($user['id']);
 
         $data = [
-            'title'          => 'Group Leader Panel - Aventuras Travel',
+            'title'          => 'Panel Representante - Aventuras Travel',
             'user'           => $user,
             'grupo'          => $grupos[0] ?? null,
-            'contrato'       => $contrato,
-            'contratos'      => $contratos,
+            'grupos'         => $grupos,
+            'contratos'      => $allContratos,
             'stats'          => [
-                'total'   => $contrato ? count($contrato['pasajeros']) : 0,
-                'paid'    => $paidCount,
-                'pending' => $pendingCount,
-                'overdue' => $overdueCount,
+                'total'     => $totalContratos,
+                'paid'      => $paidCount,
+                'pending'   => $pendingCount,
+                'overdue'   => $overdueCount,
+                'recaudado' => $totalRecaudado,
+                'deuda'     => $totalDeuda,
             ],
             'notificaciones' => $notificaciones,
             'csrf_token'     => $this->generateCsrfToken(),
@@ -431,7 +533,198 @@ class ClientController extends Controller {
     }
 
     /**
-     * Lista de contratos del representante 
+     * Panel de pagos del representante — puede pagar por cualquier contrato del grupo
+     */
+    public function leaderPayments(): void {
+        $user = $this->auth();
+        if ($user['rol'] !== 'representante') {
+            $this->redirect('/client/payments');
+            return;
+        }
+
+        $grupoModel = new Grupo();
+        $contratoModel = new Contrato();
+        $cuotaModel = new Cuota();
+        $pagoModel = new Pago();
+
+        $grupos = $grupoModel->getByRepresentante($user['id']);
+        $allContratos = [];
+        $cuotasPorContrato = [];
+        $resumen = ['esperado' => 0, 'pagado' => 0, 'pendiente' => 0];
+        $allPagos = [];
+
+        foreach ($grupos as $grupo) {
+            $gContratos = $contratoModel->getByGrupoId($grupo['id']);
+            foreach ($gContratos as &$c) {
+                $c['grupo_nombre'] = $grupo['nombre'];
+
+                // Pasajeros para búsqueda
+                $c['pasajeros'] = $this->db->fetchAll(
+                    "SELECT nombre, apellido, tipo FROM pasajeros WHERE contrato_id = ? ORDER BY tipo, nombre", [$c['id']]
+                );
+
+                // Titular
+                if (empty($c['titular_nombre']) && !empty($c['cliente_id'])) {
+                    $cli = $this->db->fetchOne(
+                        "SELECT u.nombre, u.apellido FROM clientes cl JOIN usuarios u ON cl.usuario_id = u.id WHERE cl.id = ?",
+                        [$c['cliente_id']]
+                    );
+                    if ($cli) {
+                        $c['titular_nombre'] = trim($cli['nombre'] . ' ' . $cli['apellido']);
+                    }
+                }
+
+                // Cuotas pendientes
+                $ctas = $cuotaModel->getByEntidad('contrato', $c['id']);
+                $pendientes = [];
+                foreach ($ctas as $ct) {
+                    if ($ct['estado'] !== 'pagada') {
+                        $pendientes[] = [
+                            'numero'   => (int)$ct['numero_cuota'],
+                            'concepto' => $ct['concepto'] ?? ('Cuota ' . $ct['numero_cuota']),
+                            'esperado' => (float)$ct['monto_esperado'],
+                            'pagado'   => (float)$ct['monto_pagado'],
+                            'faltante' => round((float)$ct['monto_esperado'] - (float)$ct['monto_pagado'], 2),
+                            'fecha'    => $ct['fecha_vencimiento'] ?? '',
+                            'estado'   => $ct['estado'],
+                        ];
+                    }
+                }
+                $cuotasPorContrato[$c['id']] = $pendientes;
+
+                // Resumen
+                $sum = $cuotaModel->getSummary('contrato', $c['id']);
+                $c['cuota_esperada'] = $sum['suma_esperada'];
+                $c['cuota_pagada'] = $sum['suma_pagada'];
+                $c['cuota_pendiente'] = $sum['suma_pendiente'];
+                $resumen['esperado'] += $sum['suma_esperada'];
+                $resumen['pagado'] += $sum['suma_pagada'];
+                $resumen['pendiente'] += $sum['suma_pendiente'];
+
+                // Pagos del contrato
+                $pgs = $pagoModel->getByEntidad('contrato', $c['id']);
+                foreach ($pgs as &$pg) {
+                    $pg['contrato_codigo'] = $c['codigo'];
+                    $pg['titular_nombre'] = $c['titular_nombre'] ?? '';
+                    $allPagos[] = $pg;
+                }
+                unset($pg);
+            }
+            unset($c);
+            $allContratos = array_merge($allContratos, $gContratos);
+        }
+
+        $data = [
+            'title'             => 'Pagos del Grupo - Aventuras Travel',
+            'user'              => $user,
+            'grupo'             => $grupos[0] ?? null,
+            'contratos'         => $allContratos,
+            'pagos'             => $allPagos,
+            'resumen'           => $resumen,
+            'cuotasPorContrato' => $cuotasPorContrato,
+            'csrf_token'        => $this->generateCsrfToken(),
+            'flash'             => $this->getFlash(),
+        ];
+        $this->render('client/group/payments', $data, 'client');
+    }
+
+    /**
+     * Registrar pago desde el panel del representante
+     */
+    public function leaderRegisterPayment(): void {
+        $user = $this->auth();
+        if ($user['rol'] !== 'representante') {
+            $this->flash('error', 'No autorizado.');
+            $this->redirect('/login');
+            return;
+        }
+
+        if (!$this->verifyCsrfToken()) {
+            $this->flash('error', 'Token de seguridad inválido.');
+            $this->redirect('/leader/payments');
+            return;
+        }
+
+        $contratoId = (int)$this->input('contrato_id');
+        $monto      = (float)$this->input('monto');
+        $concepto   = trim($this->input('concepto', 'Abono a cuenta'));
+        $metodoPago = $this->input('metodo_pago', 'Efectivo');
+        $banco      = $this->input('banco', '');
+        $monedaPago = $this->input('moneda_pago', 'PEN');
+
+        // Verificar que el contrato pertenece a un grupo del representante
+        $grupoModel = new Grupo();
+        $grupos    = $grupoModel->getByRepresentante($user['id']);
+        $grupoIds  = array_column($grupos, 'id');
+
+        $contrato = $this->db->fetchOne("SELECT id, grupo_id FROM contratos WHERE id = ?", [$contratoId]);
+        if (!$contrato || !in_array((int)$contrato['grupo_id'], $grupoIds)) {
+            $this->flash('error', 'El contrato no pertenece a tu grupo.');
+            $this->redirect('/leader/payments');
+            return;
+        }
+
+        if ($contratoId <= 0 || $monto <= 0) {
+            $this->flash('error', 'Contrato y monto son requeridos.');
+            $this->redirect('/leader/payments');
+            return;
+        }
+
+        if (empty($_FILES['comprobante']) || $_FILES['comprobante']['error'] !== UPLOAD_ERR_OK) {
+            $this->flash('error', 'Debe adjuntar un comprobante de pago.');
+            $this->redirect('/leader/payments');
+            return;
+        }
+
+        $file         = $_FILES['comprobante'];
+        $allowedTypes = ['application/pdf', 'image/jpeg', 'image/png'];
+        $maxSize      = 5 * 1024 * 1024;
+
+        $finfo    = new finfo(FILEINFO_MIME_TYPE);
+        $realMime = $finfo->file($file['tmp_name']);
+        if (!in_array($realMime, $allowedTypes)) {
+            $this->flash('error', 'Tipo de archivo no permitido. Solo PDF, JPG, PNG.');
+            $this->redirect('/leader/payments');
+            return;
+        }
+        if ($file['size'] > $maxSize) {
+            $this->flash('error', 'El archivo excede el tamaño máximo de 5MB.');
+            $this->redirect('/leader/payments');
+            return;
+        }
+
+        // Guardar comprobante
+        $hash        = bin2hex(random_bytes(16));
+        $extension   = pathinfo($file['name'], PATHINFO_EXTENSION);
+        $newName     = $hash . '.' . $extension;
+        $storagePath = STORAGE_PATH . '/comprobantes';
+        if (!is_dir($storagePath)) mkdir($storagePath, 0755, true);
+        move_uploaded_file($file['tmp_name'], $storagePath . '/' . $newName);
+
+        // Usar PaymentService: guarda grupo_id correctamente y notifica admins
+        require_once __DIR__ . '/../services/PaymentService.php';
+        $svc = new PaymentService();
+        $ok  = $svc->registerClientPayment(
+            $contratoId,
+            $monto,
+            $concepto,
+            $newName,
+            $metodoPago,
+            $banco,
+            $monedaPago,
+            (int)$user['id']
+        );
+
+        if ($ok) {
+            $this->flash('exito', '✅ Comprobante enviado. El equipo de Aventuras Travel revisará el pago y notificará al aprobar.');
+        } else {
+            $this->flash('error', 'Error al registrar el pago. Inténtalo de nuevo.');
+        }
+        $this->redirect('/leader/payments');
+    }
+
+    /**
+     * Lista de contratos del representante
      */
     public function leaderContracts(): void {
         $user = $this->auth();
@@ -534,4 +827,96 @@ class ClientController extends Controller {
 
         return [];
     }
+
+    /**
+     * Página de Soporte al Cliente
+     */
+    public function soporte(): void {
+        $user = $this->auth();
+
+        $data = [
+            'title'      => 'Soporte – Aventuras Travel',
+            'user'       => $user,
+            'flash'      => $this->getFlash(),
+            'csrf_token' => $this->generateCsrfToken(),
+        ];
+
+        $this->render('client/soporte', $data, 'client');
+    }
+
+    /**
+     * Download the receipt PDF for a payment (client or leader)
+     * Verifies the payment belongs to the authenticated user's contract
+     */
+    public function downloadReceipt(string $id): void {
+        $user = $this->auth();
+        $pagoModel = new Pago();
+        $pago = $pagoModel->find((int) $id);
+
+        if (!$pago || empty($pago['recibo_url'])) {
+            $this->flash('error', 'Recibo no encontrado.');
+            $this->redirect('/client/payments');
+            return;
+        }
+
+        // Verify ownership: the payment's contract must belong to this client
+        $authorized = false;
+        $contratoId = (int)($pago['contrato_id'] ?? 0);
+
+        if ($contratoId > 0) {
+            $clienteModel = new Cliente();
+            $cliente = $clienteModel->findByUsuarioId($user['id']);
+
+            if ($user['rol'] === 'cliente_familiar' && $cliente) {
+                // Check if contract belongs to this client
+                $contrato = $this->db->fetchOne(
+                    "SELECT id FROM contratos WHERE id = ? AND cliente_id = ?",
+                    [$contratoId, $cliente['id']]
+                );
+                if ($contrato) $authorized = true;
+
+                // Fallback: check via usuario_id
+                if (!$authorized) {
+                    $contrato = $this->db->fetchOne(
+                        "SELECT co.id FROM contratos co
+                         JOIN clientes cl ON co.cliente_id = cl.id
+                         WHERE co.id = ? AND cl.usuario_id = ?",
+                        [$contratoId, $user['id']]
+                    );
+                    if ($contrato) $authorized = true;
+                }
+            } elseif ($user['rol'] === 'representante') {
+                // Representante: check if contract's group belongs to them
+                $grupoModel = new Grupo();
+                $grupos = $grupoModel->getByRepresentante($user['id']);
+                $grupoIds = array_column($grupos, 'id');
+
+                $contrato = $this->db->fetchOne(
+                    "SELECT grupo_id FROM contratos WHERE id = ?",
+                    [$contratoId]
+                );
+                if ($contrato && in_array((int)$contrato['grupo_id'], $grupoIds)) {
+                    $authorized = true;
+                }
+            } elseif ($user['rol'] === 'cliente_colegio') {
+                // Grupo escolar: check if they are a passenger in this contract
+                $match = $this->db->fetchOne(
+                    "SELECT id FROM pasajeros WHERE contrato_id = ? AND nombre = ? AND apellido LIKE ?",
+                    [$contratoId, $user['nombre'], '%' . $user['apellido'] . '%']
+                );
+                if ($match) $authorized = true;
+            }
+        }
+
+        if (!$authorized) {
+            $this->flash('error', 'No estás autorizado para descargar este recibo.');
+            $this->redirect('/client/payments');
+            return;
+        }
+
+        // Delegar al FileController que ya sirve archivos correctamente
+        $fc = new FileController();
+        $fc->serve('recibos', $pago['recibo_url']);
+    }
 }
+

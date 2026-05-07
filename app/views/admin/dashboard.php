@@ -6,8 +6,8 @@ $promociones = $promociones ?? [];
 ?>
 
 <!-- Breadcrumb -->
-<div class="mb-8">
-    <h1 class="text-3xl font-black text-petroleo">Dashboard Ejecutivo</h1>
+<div class="mb-6 sm:mb-8">
+    <h1 class="text-2xl sm:text-3xl font-black text-petroleo">Dashboard Ejecutivo</h1>
 </div>
 <!-- Chart.js CDN + init -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -50,11 +50,11 @@ document.addEventListener('DOMContentLoaded', function(){
 </script>
 
 <!-- Stat Cards -->
-<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-    <div class="bg-white rounded-xl border border-petroleo/5 shadow-sm hover:shadow-md transition-all stat-card">
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
+    <div class="bg-gradient-to-br from-white to-humo rounded-xl border-2 border-petroleo/10 shadow-md hover:shadow-lg hover:border-turquesa/20 transition-all stat-card">
         <div class="stat-top">
-            <p class="stat-title text-turquesa-dark">Contratos Activos</p>
-            <span class="material-symbols-outlined text-turquesa">description</span>
+            <p class="stat-title text-turquesa-dark font-bold">Contratos Activos</p>
+            <span class="material-symbols-outlined text-turquesa text-2xl">description</span>
         </div>
         <div>
             <p class="stat-number"><?= $stats['contratos_activos'] ?></p>
@@ -64,10 +64,10 @@ document.addEventListener('DOMContentLoaded', function(){
             <p class="stat-sub">de <?= $stats['total_contratos'] ?> totales</p>
         </div>
     </div>
-    <div class="bg-white rounded-xl border border-petroleo/5 shadow-sm hover:shadow-md transition-all stat-card">
+    <div class="bg-gradient-to-br from-white to-humo rounded-xl border-2 border-petroleo/10 shadow-md hover:shadow-lg hover:border-turquesa/20 transition-all stat-card">
         <div class="stat-top">
-            <p class="stat-title text-turquesa-dark">Total Pasajeros</p>
-            <span class="material-symbols-outlined text-turquesa">groups</span>
+            <p class="stat-title text-turquesa-dark font-bold">Total Pasajeros</p>
+            <span class="material-symbols-outlined text-turquesa text-2xl">groups</span>
         </div>
         <div>
             <p class="stat-number"><?= $stats['total_pasajeros'] ?></p>
@@ -77,26 +77,26 @@ document.addEventListener('DOMContentLoaded', function(){
             <p class="stat-sub">En todos los contratos</p>
         </div>
     </div>
-    <div class="bg-white rounded-xl border border-petroleo/5 shadow-sm hover:shadow-md transition-all stat-card">
+    <div class="bg-gradient-to-br from-emerald-50 to-white rounded-xl border-2 border-emerald-200 shadow-md hover:shadow-lg hover:border-emerald-300 transition-all stat-card">
         <div class="stat-top">
-            <p class="stat-title text-emerald-600">Recaudado</p>
-            <span class="material-symbols-outlined text-emerald-500">savings</span>
+            <p class="stat-title text-emerald-700 font-bold">Recaudado</p>
+            <span class="material-symbols-outlined text-emerald-500 text-2xl">savings</span>
         </div>
         <div>
-            <p class="stat-number text-emerald-600">$<?= number_format($stats['total_recaudado'], 2) ?></p>
+            <p class="stat-number text-emerald-700">$<?= number_format($stats['total_recaudado'], 2) ?></p>
             <div style="height:28px">
                 <canvas id="spark-recaudado-2" class="stat-spark-canvas" data-values='<?= json_encode($spark_recaudado ?? []) ?>' data-labels='<?= json_encode($spark_labels ?? []) ?>'></canvas>
             </div>
             <p class="stat-sub">Total acumulado</p>
         </div>
     </div>
-    <div class="bg-white rounded-xl border border-petroleo/5 shadow-sm hover:shadow-md transition-all stat-card border-l-4 border-l-amber-400">
+    <div class="bg-gradient-to-br from-amber-50 to-white rounded-xl border-2 border-amber-300 shadow-md hover:shadow-lg hover:border-amber-400 transition-all stat-card">
         <div class="stat-top">
-            <p class="stat-title text-amber-600">Saldo Pendiente</p>
-            <span class="material-symbols-outlined text-amber-500">warning</span>
+            <p class="stat-title text-amber-700 font-bold">Saldo Pendiente</p>
+            <span class="material-symbols-outlined text-amber-500 text-2xl">warning</span>
         </div>
         <div>
-            <p class="stat-number text-amber-600">$<?= number_format($stats['saldo_pendiente'], 2) ?></p>
+            <p class="stat-number text-amber-700">$<?= number_format($stats['saldo_pendiente'], 2) ?></p>
             <div style="height:28px">
                 <canvas id="spark-pendiente" class="stat-spark-canvas" data-values='<?= json_encode($spark_recaudado ?? []) ?>' data-labels='<?= json_encode($spark_labels ?? []) ?>'></canvas>
             </div>
@@ -106,17 +106,18 @@ document.addEventListener('DOMContentLoaded', function(){
 </div>
 
 <!-- Main Grid: Transacciones + Gestión Rápida -->
-<div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8 mb-6 sm:mb-8">
     <!-- Transacciones Recientes -->
-    <div class="lg:col-span-2 bg-white rounded-xl p-8 border border-petroleo/5 shadow-sm">
-        <div class="flex justify-between items-center mb-6">
+    <div class="lg:col-span-2 bg-white rounded-xl p-4 sm:p-6 md:p-8 border border-petroleo/5 shadow-sm">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-4 sm:mb-6">
             <h2 class="text-xl font-black text-petroleo flex items-center gap-2">
                 <span class="material-symbols-outlined text-turquesa">receipt_long</span>
                 Transacciones Recientes
             </h2>
             <a href="<?= Router::url('/admin/payments') ?>" class="text-sm text-turquesa-dark font-semibold hover:underline">Ver todas →</a>
         </div>
-        <table class="w-full">
+        <div class="overflow-x-auto -mx-4 sm:mx-0">
+        <table class="w-full min-w-[500px]">
             <thead>
                 <tr class="text-xs uppercase tracking-widest text-petroleo/40 border-b border-petroleo/5">
                     <th class="text-left pb-3">Contrato</th>
@@ -151,10 +152,11 @@ document.addEventListener('DOMContentLoaded', function(){
                 <?php endif; ?>
             </tbody>
         </table>
+        </div>
     </div>
 
     <!-- Gestión Rápida -->
-    <div class="bg-white rounded-xl p-8 border border-petroleo/5 shadow-sm">
+    <div class="bg-white rounded-xl p-4 sm:p-6 md:p-8 border border-petroleo/5 shadow-sm">
         <h2 class="text-xl font-black text-petroleo flex items-center gap-2 mb-6">
             <span class="material-symbols-outlined text-turquesa">hub</span>
             Gestión Rápida

@@ -1,6 +1,63 @@
 RewriteEngine On
 RewriteBase /aventuras/
 
+# ── BLOQUEAR ARCHIVOS SENSIBLES ──────────────────────────────────────────────
+# Bloquear acceso directo a config.php
+<Files "config.php">
+    Order allow,deny
+    Deny from all
+</Files>
+
+# Bloquear archivos de debug y scripts de desarrollo
+<FilesMatch "^(seed|seed_fresh|test_|\.env)">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+
+# Bloquear .git, composer, README, etc.
+<FilesMatch "\.(git|gitignore|md|json|lock|bak|sql|sh)$">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+
+# ── HEADERS DE SEGURIDAD HTTP ─────────────────────────────────────────────────
+<IfModule mod_headers.c>
+    Header always set X-Frame-Options "SAMEORIGIN"
+    # Solo aplicar nosniff a tipos de contenido que no sean PDF
+    Header always set X-Content-Type-Options "nosniff" env=!PDF_DOWNLOAD
+    Header always set X-XSS-Protection "1; mode=block"
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+    Header always set Permissions-Policy "geolocation=(), microphone=(), camera=(), camera=()"
+    # Content-Security-Policy básica (ajustar según las APIs que uses)
+    Header always set Content-Security-Policy "default-src 'self' https: data: 'unsafe-inline' 'unsafe-eval';"
+</IfModule>
+
+# ── REGLAS PARA DESCARGA DE PDFs ─────────────────────────────────────────────
+<FilesMatch "\.pdf$">
+    SetEnv PDF_DOWNLOAD 1
+</FilesMatch>
+
+# ── COMPRESIÓN GZIP ───────────────────────────────────────────────────────────
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/html text/css application/javascript application/json
+    # Excluir PDFs de compresión para evitar corrupción
+    RemoveOutputFilter application/pdf
+</IfModule>
+
+# ── CACHÉ DE ASSETS ESTÁTICOS ─────────────────────────────────────────────────
+<IfModule mod_expires.c>
+    ExpiresActive On
+    ExpiresByType text/css "access plus 1 month"
+    ExpiresByType application/javascript "access plus 1 month"
+    ExpiresByType image/png "access plus 1 year"
+    ExpiresByType image/jpg "access plus 1 year"
+    ExpiresByType image/jpeg "access plus 1 year"
+    ExpiresByType image/webp "access plus 1 year"
+    ExpiresByType image/svg+xml "access plus 1 year"
+    ExpiresByType font/woff2 "access plus 1 year"
+</IfModule>
+
+# ── REWRITE RULES ─────────────────────────────────────────────────────────────
 # Si el archivo existe directamente (ej: public/assets/css/style.css), servirlo
 RewriteCond %{REQUEST_FILENAME} -f
 RewriteRule ^ - [L]
@@ -11,7 +68,7 @@ RewriteCond %{REQUEST_URI} !^/aventuras/public(/.*)?$
 RewriteCond %{REQUEST_URI} !^/aventuras/?$
 RewriteRule ^ - [L]
 
-# Si el archivo existe dentro de public/ (assets, imágenes, seed.php, storage.php, etc.)
+# Si el archivo existe dentro de public/ (assets, imágenes, etc.)
 RewriteCond %{DOCUMENT_ROOT}/aventuras/public/$1 -f
 RewriteRule ^(.+)$ public/$1 [L]
 

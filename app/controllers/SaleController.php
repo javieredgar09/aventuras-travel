@@ -54,6 +54,7 @@ class SaleController extends Controller {
             $operador = $this->input('operador');
             $fechaViaje = $this->input('fecha_viaje');
             $fechaRetorno = $this->input('fecha_retorno');
+            $monedaGrupo = $this->input('moneda_grupo', 'USD');
             $valorTotal = (float) $this->input('valor_total', 0);
             $deposito = (float) $this->input('deposito', 0);
             $tipoPago = $this->input('tipo_pago', 'contado');
@@ -91,9 +92,11 @@ class SaleController extends Controller {
                 return;
             }
 
-            // Valida teléfono simple: dígitos, espacios, +, - y paréntesis (7-20 chars)
-            if (empty($phoneFirst) || !preg_match('/^[0-9+\-\s\(\)]{7,20}$/', $phoneFirst)) {
-                $this->flash('error', 'Teléfono del titular inválido o vacío. Formato aceptado: números y opcionalmente + - ( )');
+            // Valida teléfono: mínimo 6 caracteres, dígitos, espacios, +, - y paréntesis
+            // Permitir formatos: +1 (555) 123-4567, 5551234567, +34 912 34 56 78, etc
+            if (empty($phoneFirst) || !preg_match('/^[0-9+\-\s\(\)\.]{6,25}$/', $phoneFirst)) {
+                error_log("[SaleController::store] Validación teléfono falló. Teléfono: '$phoneFirst'");
+                $this->flash('error', 'Teléfono del titular inválido. Debe tener 6-25 caracteres (números, +, -, espacios, paréntesis)');
                 $this->redirect('/admin/sales/create');
                 return;
             }
@@ -108,6 +111,7 @@ class SaleController extends Controller {
             'destino_code' => $this->input('destino_code') ?: null,
             'fecha_viaje'  => $fechaViaje ?: null,
             'fecha_retorno' => $fechaRetorno ?: null,
+            'moneda_grupo' => $monedaGrupo,
             'valor_total'  => $valorTotal,
             'deposito'     => $deposito,
             'tipo_pago'    => $tipoPago,
@@ -236,6 +240,30 @@ class SaleController extends Controller {
                     require_once BASE_PATH . '/app/services/EmailService.php';
                     $emailSvc = new EmailService();
                     $emailSvc->sendCredentials($email, $nombreTitular ?: 'Cliente', $codigo, $randomPass);
+
+                    // ── Enviar credenciales por WhatsApp ──────────────────────
+                    if (!empty($telefono)) {
+                        try {
+                            require_once BASE_PATH . '/app/services/WhatsAppService.php';
+                            $whatsAppService = new WhatsAppService();
+                            $phoneNormalized = WhatsAppService::normalizePhoneNumber($telefono);
+
+                            $waResult = $whatsAppService->sendCredentials(
+                                phoneNumber: $phoneNormalized,
+                                clientName: $nombreTitular ?: 'Cliente',
+                                contractCode: $codigo,
+                                password: $randomPass
+                            );
+
+                            if ($waResult['success']) {
+                                error_log("[SaleController::store] ✅ WhatsApp creds enviado a: $phoneNormalized");
+                            } else {
+                                error_log("[SaleController::store] ❌ WhatsApp error: " . ($waResult['error'] ?? ''));
+                            }
+                        } catch (Exception $waEx) {
+                            error_log('[SaleController::store] WhatsApp exception: ' . $waEx->getMessage());
+                        }
+                    }
 
                     // Preparar mensaje de credenciales para mostrar al admin
                     $credMsg = " Credenciales generadas: usuario={$codigo} contraseña={$randomPass} (enviadas a {$email}).";

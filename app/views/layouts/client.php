@@ -17,7 +17,7 @@
         }
     }
     ?>
-    <link rel="stylesheet" href="<?= asset_version('/assets/css/client.css') ?>">
+    <link rel="stylesheet" href="<?= asset_version('/assets/css/styles.css') ?>">
     <script>
     tailwind.config = {
         darkMode: "class",
@@ -71,10 +71,11 @@
                     "on-primary-fixed": "#001f26",
                     "surface-bright": "#f6fafc",
                     "on-background": "#171c1e",
-                    "petroleo": "#1a3a4a",
-                    "turquesa": "#0ea5a3",
-                    "turquesa-dark": "#0d8f8d",
-                    "superficie": "#f0f7f7"
+                    "petroleo": "#1B3A4B",
+                    "turquesa": "#4ABED9",
+                    "turquesa-dark": "#00687A",
+                    "superficie": "#EAF0F2",
+                    "humo": "#F6FAFC"
                 },
                 fontFamily: {
                     "headline": ["Inter","system-ui","sans-serif"],
@@ -91,7 +92,12 @@
 
 <?php
 $uri = $_SERVER['REQUEST_URI'] ?? '';
-$navItems = [
+$isRepresentante = ($_SESSION['user']['rol'] ?? '') === 'representante';
+$navItems = $isRepresentante ? [
+    ['/leader/dashboard', 'Panel', 'home'],
+    ['/leader/contracts', 'Contratos', 'description'],
+    ['/leader/payments',  'Pagos', 'payments'],
+] : [
     ['/client/dashboard', 'Panel', 'home'],
     ['/client/services',  'Mis Viajes', 'explore'],
     ['/client/payments',  'Pagos', 'payments'],
@@ -102,54 +108,71 @@ $userInitials = strtoupper(substr($_SESSION['user']['nombre'] ?? 'U', 0, 1) . su
 ?>
 
 <!-- TOP NAV -->
-<nav class="fixed top-0 w-full z-50 bg-white/90 backdrop-blur-xl shadow-sm shadow-slate-200/50">
+<nav class="fixed top-0 w-full z-50 bg-gradient-to-r from-white/80 to-white/90 backdrop-blur-2xl shadow-lg shadow-turquesa-dark/10 border-b border-turquesa/15">
     <div class="flex justify-between items-center px-6 py-3 max-w-[1600px] mx-auto">
         <div class="flex items-center gap-8">
             <a href="<?= Router::url('/') ?>" class="flex items-center gap-2">
                 <img src="<?= Router::url('/img/sin_fondo.png') ?>" alt="Aventuras Travel" class="h-10 w-10 object-contain">
-                <span class="text-xl font-bold text-primary tracking-tight hidden sm:inline">Aventuras Travel <span class="text-secondary font-medium">Pucallpa</span></span>
+                <span class="text-xl font-bold text-petroleo tracking-tight hidden sm:inline">Aventuras Travel <span class="text-turquesa-dark font-medium">Pucallpa</span></span>
             </a>
-            <div class="hidden lg:flex items-center gap-1 border-l border-slate-200 pl-8">
+            <div class="hidden lg:flex items-center gap-1 border-l border-petroleo/10 pl-8">
                 <?php foreach ($navItems as $item):
                     $isActive = strpos($uri, $item[0]) !== false;
                 ?>
                 <a href="<?= Router::url($item[0]) ?>"
-                   class="px-4 py-2 font-medium transition-colors tracking-tight <?= $isActive ? 'text-cyan-700 font-bold border-b-2 border-cyan-600' : 'text-slate-600 hover:text-cyan-700' ?>">
+                   class="px-4 py-2 font-medium transition-colors tracking-tight <?= $isActive ? 'text-turquesa-dark font-bold border-b-2 border-turquesa' : 'text-petroleo/70 hover:text-turquesa-dark' ?>">
                     <?= $item[1] ?>
                 </a>
                 <?php endforeach; ?>
-                <a href="#" class="px-4 py-2 text-slate-600 hover:text-cyan-700 transition-colors font-medium tracking-tight">Soporte</a>
+                <a href="<?= Router::url('/client/soporte') ?>"
+                   class="px-4 py-2 font-medium transition-colors tracking-tight <?= strpos($uri, '/client/soporte') !== false ? 'text-turquesa-dark font-bold border-b-2 border-turquesa' : 'text-petroleo/70 hover:text-turquesa-dark' ?>">
+                   Soporte
+                </a>
             </div>
         </div>
         <div class="flex items-center gap-2 md:gap-4">
-            <button class="p-2 hover:bg-cyan-50/50 rounded-lg transition-all relative">
-                <span class="material-symbols-outlined text-cyan-800">notifications</span>
+            <button class="p-2 hover:bg-turquesa/5 rounded-lg transition-all relative">
+                <span class="material-symbols-outlined text-petroleo">notifications</span>
                 <?php if (!empty($notificaciones)): ?>
-                <span class="absolute top-1 right-1 w-2 h-2 bg-error rounded-full"></span>
+                <span class="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
                 <?php endif; ?>
             </button>
             <div class="relative" id="userMenuWrapper">
-                <button onclick="document.getElementById('userDropdown').classList.toggle('hidden')" class="flex items-center gap-2 px-3 py-1.5 hover:bg-cyan-50/50 rounded-full transition-colors">
-                    <div class="w-9 h-9 rounded-full bg-secondary-container flex items-center justify-center text-secondary font-black text-sm">
+                <button onclick="document.getElementById('userDropdown').classList.toggle('hidden')" class="flex items-center gap-2 px-3 py-1.5 hover:bg-turquesa/5 rounded-full transition-colors">
+                    <div class="w-9 h-9 rounded-full bg-turquesa/15 flex items-center justify-center text-turquesa-dark font-black text-sm">
                         <?= $userInitials ?>
                     </div>
                     <div class="hidden sm:block text-left">
-                        <p class="text-xs font-bold text-cyan-800 leading-none"><?= $userCode ?></p>
-                        <p class="text-[10px] text-slate-500 leading-none mt-0.5">Cliente</p>
+                        <p class="text-xs font-bold text-petroleo leading-none"><?= $userCode ?></p>
+                        <?php $loggedRol = $_SESSION['user']['rol'] ?? ''; ?>
+                        <p class="text-[10px] text-slate-500 leading-none mt-0.5"><?= $loggedRol === 'admin' ? 'Administrador' : ($loggedRol === 'representante' ? 'Representante' : 'Cliente') ?></p>
                     </div>
                     <span class="material-symbols-outlined text-sm text-slate-400 hidden sm:inline">keyboard_arrow_down</span>
                 </button>
                 <div id="userDropdown" class="hidden absolute right-0 top-full mt-2 w-56 bg-white rounded-xl shadow-xl border border-slate-100 p-2 z-50">
                     <div class="px-3 py-2 border-b border-slate-100 mb-1">
-                        <p class="text-sm font-bold text-on-surface"><?= $userName ?></p>
-                        <p class="text-xs text-outline"><?= $userCode ?></p>
+                        <p class="text-sm font-bold text-petroleo"><?= $userName ?></p>
+                        <p class="text-xs text-slate-400"><?= $userCode ?></p>
                     </div>
-                    <a href="<?= Router::url('/client/dashboard') ?>" class="flex items-center gap-3 px-3 py-2 hover:bg-cyan-50 rounded-lg transition-colors text-sm text-slate-700">
-                        <span class="material-symbols-outlined text-lg text-cyan-600">dashboard</span> Mi Panel
-                    </a>
-                    <a href="<?= Router::url('/client/payments') ?>" class="flex items-center gap-3 px-3 py-2 hover:bg-cyan-50 rounded-lg transition-colors text-sm text-slate-700">
-                        <span class="material-symbols-outlined text-lg text-cyan-600">receipt_long</span> Mis Pagos
-                    </a>
+                    <?php if ($loggedRol === 'admin'): ?>
+                        <a href="<?= Router::url('/admin/dashboard') ?>" class="flex items-center gap-3 px-3 py-2 hover:bg-turquesa/5 rounded-lg transition-colors text-sm text-slate-700">
+                            <span class="material-symbols-outlined text-lg text-turquesa-dark">admin_panel_settings</span> Panel Admin
+                        </a>
+                    <?php elseif ($loggedRol === 'representante'): ?>
+                        <a href="<?= Router::url('/leader/dashboard') ?>" class="flex items-center gap-3 px-3 py-2 hover:bg-turquesa/5 rounded-lg transition-colors text-sm text-slate-700">
+                            <span class="material-symbols-outlined text-lg text-turquesa-dark">school</span> Mi Panel
+                        </a>
+                        <a href="<?= Router::url('/leader/payments') ?>" class="flex items-center gap-3 px-3 py-2 hover:bg-turquesa/5 rounded-lg transition-colors text-sm text-slate-700">
+                            <span class="material-symbols-outlined text-lg text-turquesa-dark">payments</span> Pagos
+                        </a>
+                    <?php else: ?>
+                        <a href="<?= Router::url('/client/dashboard') ?>" class="flex items-center gap-3 px-3 py-2 hover:bg-turquesa/5 rounded-lg transition-colors text-sm text-slate-700">
+                            <span class="material-symbols-outlined text-lg text-turquesa-dark">dashboard</span> Mi Panel
+                        </a>
+                        <a href="<?= Router::url('/client/payments') ?>" class="flex items-center gap-3 px-3 py-2 hover:bg-turquesa/5 rounded-lg transition-colors text-sm text-slate-700">
+                            <span class="material-symbols-outlined text-lg text-turquesa-dark">receipt_long</span> Mis Pagos
+                        </a>
+                    <?php endif; ?>
                     <div class="border-t border-slate-100 mt-1 pt-1">
                         <a href="<?= Router::url('/logout') ?>" class="flex items-center gap-3 px-3 py-2 hover:bg-red-50 rounded-lg transition-colors text-sm text-red-600 font-medium">
                             <span class="material-symbols-outlined text-lg">logout</span> Cerrar Sesión
@@ -182,13 +205,18 @@ $userInitials = strtoupper(substr($_SESSION['user']['nombre'] ?? 'U', 0, 1) . su
         <span class="text-[9px] font-black uppercase tracking-widest"><?= $item[1] ?></span>
     </a>
     <?php endforeach; ?>
+    <?php $soporteActive = strpos($uri, '/client/soporte') !== false; ?>
+    <a href="<?= Router::url('/client/soporte') ?>" class="flex flex-col items-center gap-1 <?= $soporteActive ? 'text-primary' : 'text-slate-400 hover:text-primary' ?> transition-colors">
+        <span class="material-symbols-outlined">headset_mic</span>
+        <span class="text-[9px] font-black uppercase tracking-widest">Soporte</span>
+    </a>
     <a href="<?= Router::url('/logout') ?>" class="flex flex-col items-center gap-1 text-slate-400 hover:text-red-500 transition-colors">
         <span class="material-symbols-outlined">logout</span>
         <span class="text-[9px] font-black uppercase tracking-widest">Salir</span>
     </a>
 </nav>
 
-<script src="<?= asset_version('/assets/js/client.js') ?>"></script>
+<script src="<?= asset_version('/assets/js/app.js') ?>"></script>
 <script>
 // Close user dropdown on outside click
 document.addEventListener('click', function(e) {

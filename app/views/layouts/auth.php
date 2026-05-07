@@ -8,7 +8,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="<?= Router::url('/assets/css/styles.css') ?>">
-    <link rel="icon" href="/aventuras/img/sin_fondo.png" type="image/png">
+    <link rel="icon" href="<?= Router::url('/img/sin_fondo.png') ?>" type="image/png">
     <script>
     tailwind.config = {
         theme: {
@@ -28,7 +28,7 @@
 <body class="min-h-screen font-sans relative overflow-hidden">
     <!-- Background -->
     <div class="absolute inset-0 bg-gradient-to-br from-petroleo/90 via-turquesa-dark/80 to-petroleo/90 z-0"></div>
-    <img src="/aventuras/img/machu.jpg" alt="" class="absolute inset-0 w-full h-full object-cover opacity-30 z-0" onerror="this.style.display='none'">
+    <img src="<?= Router::url('/img/machu.jpg') ?>" alt="" class="absolute inset-0 w-full h-full object-cover opacity-30 z-0" onerror="this.style.display='none'">
 
     <!-- Help button -->
     <div class="absolute top-6 right-6 z-20">

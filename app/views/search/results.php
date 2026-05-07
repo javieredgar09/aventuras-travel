@@ -1,141 +1,217 @@
-<!-- BUSCADOR DE DESTINOS – TAILWIND – UNSPLASH API -->
+<!-- BUSCADOR DE DESTINOS – RESULTADOS – AVENTURAS TRAVEL -->
 
-<!-- Barra de búsqueda SIMPLIFICADA -->
-<section class="bg-superficie px-8 py-10 mt-4 mx-4 rounded-xl">
-    <div class="max-w-4xl mx-auto">
-        <label class="block text-xs font-bold uppercase tracking-widest text-turquesa-dark mb-3 px-1">Exploración Global</label>
-        <div class="flex gap-3">
-            <div class="relative flex-grow">
-                <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-petroleo/30">search</span>
-                <input id="searchInput" type="text" value="<?= htmlspecialchars($query ?? '') ?>"
-                    class="w-full pl-12 pr-4 py-4 bg-white border-none rounded-xl focus:ring-2 focus:ring-turquesa/30 text-lg font-medium text-petroleo shadow-sm" 
-                    placeholder="¿A dónde quieres viajar? Ej: Cusco, Cancún, París...">
-            </div>
-            <button onclick="searchDestination()" class="px-10 py-4 bg-gradient-to-r from-turquesa-dark to-turquesa text-white font-bold rounded-xl shadow-lg hover:shadow-xl transition-all active:scale-95 whitespace-nowrap flex items-center gap-2">
-                <span class="material-symbols-outlined">travel_explore</span>
-                Buscar
-            </button>
+<!-- ══ HERO SEARCH BAR ══════════════════════════════════════════════════════ -->
+<section class="relative overflow-hidden" style="background: linear-gradient(135deg, #0D2432 0%, #1B3A4B 50%, #00687A 100%);">
+    <!-- Decoración de fondo -->
+    <div class="absolute inset-0 opacity-10" style="background-image: radial-gradient(circle at 20% 50%, #4ABED9 0%, transparent 50%), radial-gradient(circle at 80% 20%, #4ABED9 0%, transparent 40%);"></div>
+    <div class="absolute top-0 right-0 w-96 h-96 rounded-full opacity-5" style="background: #4ABED9; transform: translate(30%, -30%);"></div>
+
+    <div class="relative max-w-5xl mx-auto px-4 sm:px-6 md:px-8 py-8 sm:py-10 md:py-12">
+        <!-- Label -->
+        <div class="flex items-center gap-2 mb-3">
+            <span class="material-symbols-outlined text-turquesa text-xl" style="color:#4ABED9;">travel_explore</span>
+            <p class="text-xs font-bold uppercase tracking-[0.2em] text-white/60">Buscador de Destinos · Aventuras Travel</p>
+        </div>
+
+        <!-- Resultado actual -->
+        <h1 class="text-3xl sm:text-4xl md:text-5xl font-black text-white mb-2 leading-tight">
+            Explorando <span style="color:#4ABED9;"><?= htmlspecialchars($query ?? 'tu destino') ?></span>
+        </h1>
+        <p class="text-white/60 text-sm mb-6">Clima, hospedajes, experiencias y tipo de cambio en tiempo real.</p>
+
+        <!-- Search bar -->
+        <div class="relative" id="resultsSearchWrapper">
+            <form action="<?= Router::url('/search/results') ?>" method="GET"
+                  class="flex items-center gap-2 p-2 rounded-2xl shadow-2xl"
+                  style="background: rgba(255,255,255,0.08); border: 1px solid rgba(74,190,217,0.3); backdrop-filter: blur(12px);">
+                <span class="material-symbols-outlined text-white/50 ml-2 text-xl">search</span>
+                <input id="searchInput" type="text" name="q"
+                       value="<?= htmlspecialchars($query ?? '') ?>"
+                       autocomplete="off"
+                       class="flex-1 border-none bg-transparent px-2 py-3 text-base sm:text-lg font-semibold text-white placeholder:text-white/40 focus:ring-0 focus:outline-none"
+                       placeholder="¿A dónde quieres viajar? Ej: Cusco, Cancún, París...">
+                <button type="submit"
+                    class="px-5 sm:px-8 py-3 font-bold rounded-xl transition-all active:scale-95 flex items-center gap-2 whitespace-nowrap text-white shadow-lg"
+                    style="background: linear-gradient(135deg, #4ABED9, #00687A);">
+                    <span class="material-symbols-outlined text-lg">travel_explore</span>
+                    <span class="hidden sm:inline">Buscar</span>
+                </button>
+            </form>
+            <!-- Autocomplete dropdown -->
+            <div id="resultsSuggestions" class="results-ac-dropdown hidden"></div>
+        </div>
+
+        <!-- Chips de destinos populares -->
+        <div class="flex flex-wrap gap-2 mt-4">
+            <?php
+            $popularDests = ['Cusco', 'Cancún', 'Punta Cana', 'París', 'Miami', 'Bali'];
+            foreach ($popularDests as $dest):
+                $isActive = strtolower($query ?? '') === strtolower($dest);
+            ?>
+            <a href="<?= Router::url('/search/results?q=' . urlencode($dest)) ?>"
+               class="px-3 py-1.5 rounded-full text-xs font-bold transition-all"
+               style="<?= $isActive
+                   ? 'background:#4ABED9; color:#0D2432;'
+                   : 'background:rgba(255,255,255,0.1); color:rgba(255,255,255,0.7); border:1px solid rgba(74,190,217,0.25);' ?>">
+                <?= $dest ?>
+            </a>
+            <?php endforeach; ?>
         </div>
     </div>
 </section>
 
-<!-- Contenido destino -->
-<section class="px-8 py-12 max-w-7xl mx-auto">
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+<!-- ══ CONTENIDO DESTINO ═══════════════════════════════════════════════════ -->
+<section class="px-4 sm:px-6 md:px-8 py-8 sm:py-10 md:py-12 max-w-7xl mx-auto">
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 items-start">
 
         <!-- COLUMNA IZQUIERDA (8 cols) -->
         <div class="lg:col-span-8 space-y-8">
 
             <!-- Hero Image -->
-            <div class="relative h-[480px] rounded-2xl overflow-hidden group" id="heroContainer">
-                <!-- Skeleton loader -->
-                <div id="heroSkeleton" class="absolute inset-0 bg-gradient-to-br from-petroleo/10 to-turquesa/10 animate-pulse flex items-center justify-center">
-                    <span class="material-symbols-outlined text-6xl text-turquesa/30 animate-bounce">landscape</span>
+            <div class="relative h-[280px] sm:h-[380px] md:h-[480px] rounded-2xl overflow-hidden group" id="heroContainer">
+                <div id="heroSkeleton" class="absolute inset-0 animate-pulse flex items-center justify-center" style="background: linear-gradient(135deg, rgba(27,58,75,0.15), rgba(74,190,217,0.12));">
+                    <span class="material-symbols-outlined text-6xl animate-bounce" style="color: rgba(74,190,217,0.4);">landscape</span>
                 </div>
                 <img id="heroImage" alt="" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 opacity-0"
                     onload="this.classList.remove('opacity-0');this.classList.add('opacity-100');document.getElementById('heroSkeleton').style.display='none';">
-                <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
-                <div class="absolute bottom-8 left-8 text-white">
-                    <span class="bg-turquesa/20 backdrop-blur-sm text-turquesa px-3 py-1 rounded-full text-xs font-bold uppercase tracking-widest mb-4 inline-block">Top Choice 2026</span>
-                    <h1 class="text-5xl font-black tracking-tight mb-2" id="destName"><?= htmlspecialchars($query ?? 'Cusco, Peru') ?></h1>
-                    <p class="text-xl text-white/80 max-w-xl" id="destDesc">Cargando descripción...</p>
+                <div class="absolute inset-0" style="background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.2) 50%, transparent 100%);"></div>
+                <div class="absolute bottom-4 sm:bottom-6 md:bottom-8 left-4 sm:left-6 md:left-8 text-white">
+                    <span class="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-widest mb-3 sm:mb-4 inline-block" style="background:rgba(74,190,217,0.25); color:#4ABED9; backdrop-filter:blur(8px); border:1px solid rgba(74,190,217,0.3);">Top Choice 2026</span>
+                    <h2 class="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight mb-1 sm:mb-2" id="destName"><?= htmlspecialchars($query ?? 'Cusco, Peru') ?></h2>
+                    <p class="text-base sm:text-lg text-white/80 max-w-xl" id="destDesc">Cargando descripción...</p>
                 </div>
-                <!-- Unsplash credit -->
                 <div class="absolute bottom-3 right-4 text-[10px] text-white/40" id="unsplashCredit"></div>
             </div>
 
             <!-- Info Bento Grid: Clima + Temporada + Esenciales -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-5">
                 <!-- Clima -->
-                <div class="bg-superficie p-6 rounded-xl flex flex-col gap-4">
+                <div class="p-6 rounded-2xl flex flex-col gap-4 shadow-xl" style="background: linear-gradient(135deg, #0D2432, #1B3A4B);">
                     <div class="flex items-center gap-3">
-                        <span class="material-symbols-outlined text-turquesa-dark text-3xl">thermostat</span>
-                        <h3 class="font-bold text-turquesa-dark">Clima Local</h3>
+                        <div class="w-10 h-10 rounded-xl flex items-center justify-center" style="background: rgba(74,190,217,0.2);">
+                            <span class="material-symbols-outlined text-2xl" style="color:#4ABED9;">thermostat</span>
+                        </div>
+                        <h3 class="font-bold text-white text-xs uppercase tracking-widest">Clima Local</h3>
                     </div>
-                    <div class="flex items-end gap-2">
-                        <span class="text-3xl font-black text-petroleo" id="weatherTemp">--°C</span>
-                        <span class="text-sm text-petroleo/50 mb-1" id="weatherDesc">Cargando...</span>
+                    <div class="flex items-end gap-3">
+                        <span class="text-4xl font-black text-white leading-none" id="weatherTemp">--°C</span>
+                        <span class="text-sm font-semibold mb-1" style="color:#4ABED9;" id="weatherDesc">Cargando...</span>
                     </div>
-                    <div class="text-xs font-medium text-petroleo/40 space-y-1">
+                    <div class="text-xs space-y-1 border-t pt-3" style="color:rgba(255,255,255,0.45); border-color:rgba(255,255,255,0.1);">
                         <p id="weatherHumidity">Humedad: --%</p>
                         <p id="weatherWind">Viento: -- km/h</p>
                     </div>
                 </div>
+
                 <!-- Temporada -->
-                <div class="bg-superficie p-6 rounded-xl flex flex-col gap-4">
+                <div class="p-6 rounded-2xl flex flex-col gap-4 shadow-xl" style="background: linear-gradient(135deg, #00687A, #4ABED9);">
                     <div class="flex items-center gap-3">
-                        <span class="material-symbols-outlined text-turquesa-dark text-3xl">calendar_month</span>
-                        <h3 class="font-bold text-turquesa-dark">Mejor Temporada</h3>
+                        <div class="w-10 h-10 rounded-xl flex items-center justify-center" style="background: rgba(255,255,255,0.2);">
+                            <span class="material-symbols-outlined text-2xl text-white">calendar_month</span>
+                        </div>
+                        <h3 class="font-bold text-white text-xs uppercase tracking-widest">Mejor Temporada</h3>
                     </div>
-                    <div class="text-xl font-bold text-petroleo" id="peakSeason">Mayo — Septiembre</div>
-                    <p class="text-xs text-petroleo/40 leading-relaxed" id="seasonTip">Temporada seca con cielos claros, ideal para trekking y turismo.</p>
+                    <div class="text-xl font-black text-white leading-tight" id="peakSeason">Mayo — Sep</div>
+                    <p class="text-xs leading-relaxed" style="color:rgba(255,255,255,0.8);" id="seasonTip">Temporada seca con cielos claros.</p>
                 </div>
+
                 <!-- Esenciales -->
-                <div class="bg-superficie p-6 rounded-xl flex flex-col gap-4">
+                <div class="p-6 rounded-2xl flex flex-col gap-4 shadow-sm bg-white" style="border: 2px solid rgba(27,58,75,0.08);">
                     <div class="flex items-center gap-3">
-                        <span class="material-symbols-outlined text-turquesa-dark text-3xl">payments</span>
-                        <h3 class="font-bold text-turquesa-dark">Información Esencial</h3>
+                        <div class="w-10 h-10 rounded-xl flex items-center justify-center" style="background: rgba(27,58,75,0.08);">
+                            <span class="material-symbols-outlined text-2xl" style="color:#1B3A4B;">payments</span>
+                        </div>
+                        <h3 class="font-bold text-xs uppercase tracking-widest" style="color:#1B3A4B;">Info Esencial</h3>
                     </div>
-                    <div class="space-y-2">
-                        <div class="flex justify-between items-center">
-                            <span class="text-xs uppercase tracking-widest text-petroleo/40">Moneda</span>
-                            <span class="font-bold text-sm text-petroleo" id="currencyInfo">--</span>
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-center pb-2" style="border-bottom:1px solid rgba(27,58,75,0.08);">
+                            <span class="text-xs uppercase tracking-widest font-semibold" style="color:rgba(27,58,75,0.4);">Moneda</span>
+                            <span class="font-black text-sm" style="color:#1B3A4B;" id="currencyInfo">--</span>
+                        </div>
+                        <div class="flex justify-between items-center pb-2" style="border-bottom:1px solid rgba(27,58,75,0.08);">
+                            <span class="text-xs uppercase tracking-widest font-semibold" style="color:rgba(27,58,75,0.4);">Idioma</span>
+                            <span class="font-black text-sm" style="color:#1B3A4B;" id="languageInfo">--</span>
                         </div>
                         <div class="flex justify-between items-center">
-                            <span class="text-xs uppercase tracking-widest text-petroleo/40">Idioma</span>
-                            <span class="font-bold text-sm text-petroleo" id="languageInfo">--</span>
-                        </div>
-                        <div class="flex justify-between items-center">
-                            <span class="text-xs uppercase tracking-widest text-petroleo/40">Cambio</span>
-                            <span class="font-bold text-sm text-turquesa-dark" id="exchangeRate">--</span>
+                            <span class="text-xs uppercase tracking-widest font-semibold" style="color:rgba(27,58,75,0.4);">Cambio</span>
+                            <span class="font-black text-sm" style="color:#059669;" id="exchangeRate">--</span>
                         </div>
                     </div>
                 </div>
             </div>
 
             <!-- Experiencias Imperdibles -->
-            <div class="space-y-6">
-                <h2 class="text-2xl font-black tracking-tight text-turquesa-dark">Experiencias Imperdibles</h2>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6" id="experiencesGrid">
+            <div class="space-y-5">
+                <div class="flex items-center gap-3">
+                    <div class="w-1.5 h-8 rounded-full" style="background: linear-gradient(180deg, #00687A, #4ABED9);"></div>
+                    <h2 class="text-2xl font-black tracking-tight" style="color:#1B3A4B;">Experiencias Imperdibles</h2>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5" id="experiencesGrid">
                     <!-- JS carga experiencias -->
                 </div>
             </div>
 
             <!-- Galería Unsplash -->
-            <div class="space-y-6">
-                <h2 class="text-2xl font-black tracking-tight text-turquesa-dark">Galería del Destino</h2>
-                <div class="grid grid-cols-2 md:grid-cols-3 gap-4" id="galleryGrid">
+            <div class="space-y-5">
+                <div class="flex items-center gap-3">
+                    <div class="w-1.5 h-8 rounded-full" style="background: linear-gradient(180deg, #00687A, #4ABED9);"></div>
+                    <h2 class="text-2xl font-black tracking-tight" style="color:#1B3A4B;">Galería del Destino</h2>
+                </div>
+                <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4" id="galleryGrid">
                     <!-- JS carga galería de Unsplash -->
                 </div>
             </div>
         </div>
 
         <!-- COLUMNA DERECHA (4 cols) -->
-        <aside class="lg:col-span-4 space-y-8">
+        <aside class="lg:col-span-4 space-y-5 order-first lg:order-last">
             <!-- Mapa -->
-            <div class="bg-superficie rounded-xl overflow-hidden h-[300px] relative" id="mapContainer">
-                <div class="absolute inset-0 flex flex-col items-center justify-center">
-                    <span class="material-symbols-outlined text-turquesa text-6xl mb-2">map</span>
-                    <p class="font-bold text-turquesa-dark">Mapa Interactivo</p>
-                    <p class="text-xs text-petroleo/40">Clic para explorar</p>
+            <div class="rounded-2xl overflow-hidden h-[280px] relative shadow-lg" style="border:2px solid rgba(27,58,75,0.08);" id="mapContainer">
+                <div class="absolute inset-0 flex flex-col items-center justify-center" style="background:#EAF0F2;">
+                    <span class="material-symbols-outlined text-6xl mb-2" style="color:#4ABED9;">map</span>
+                    <p class="font-bold" style="color:#00687A;">Mapa Interactivo</p>
+                    <p class="text-xs" style="color:rgba(27,58,75,0.4);">Clic para explorar</p>
                 </div>
             </div>
 
             <!-- Hoteles -->
-            <div class="bg-superficie p-8 rounded-xl">
-                <h3 class="text-xl font-black text-turquesa-dark mb-6 flex items-center gap-2">
-                    <span class="material-symbols-outlined">hotel</span>
+            <div class="p-5 sm:p-6 rounded-2xl shadow-xl" style="background: linear-gradient(135deg, #0D2432, #1B3A4B);">
+                <h3 class="text-lg font-black text-white mb-5 flex items-center gap-2">
+                    <span class="material-symbols-outlined" style="color:#4ABED9;">hotel</span>
                     Hospedajes Recomendados
                 </h3>
-                <div class="space-y-5" id="hotelsGrid">
+                <div class="space-y-4" id="hotelsGrid">
                     <div class="text-center py-8">
-                        <span class="material-symbols-outlined text-4xl text-petroleo/20 animate-spin">progress_activity</span>
-                        <p class="text-sm text-petroleo/40 mt-2">Buscando hoteles...</p>
+                        <span class="material-symbols-outlined text-4xl animate-spin" style="color:rgba(255,255,255,0.2);">progress_activity</span>
+                        <p class="text-sm mt-2" style="color:rgba(255,255,255,0.4);">Buscando hoteles...</p>
                     </div>
                 </div>
-                <button class="w-full mt-6 py-3 bg-turquesa-dark text-white rounded-xl font-bold hover:bg-petroleo transition-all">
-                    Ver Todos los Hospedajes
-                </button>
+                <div class="space-y-3 mt-5 pt-5" style="border-top:1px solid rgba(255,255,255,0.1);">
+                    <button class="w-full py-3 font-bold rounded-xl transition-all active:scale-95 flex items-center justify-center gap-2 text-white shadow-lg"
+                            style="background: linear-gradient(135deg, #4ABED9, #00687A);">
+                        <span class="material-symbols-outlined">local_offer</span>
+                        Cotizar otras opciones
+                    </button>
+                    <a href="https://wa.me/51976324716?text=Hola%20Aventuras%20Travel%2C%20me%20interesa%20consultar%20sobre%20hospedaje" target="_blank"
+                       class="flex items-center justify-center gap-2 w-full py-3 font-bold rounded-xl transition-all active:scale-95 text-white shadow-md"
+                       style="background: linear-gradient(135deg, #22c55e, #16a34a);">
+                        <span class="material-symbols-outlined text-lg">chat</span>
+                        Escribirnos al WhatsApp
+                    </a>
+                </div>
+            </div>
+
+            <!-- CTA Asesoría -->
+            <div class="p-6 rounded-2xl text-white shadow-lg" style="background: linear-gradient(135deg, #4ABED9, #00687A);">
+                <span class="material-symbols-outlined text-4xl mb-3 block" style="color:rgba(255,255,255,0.7);">support_agent</span>
+                <h3 class="text-xl font-black mb-2">¿Quieres este destino?</h3>
+                <p class="text-sm mb-4 leading-relaxed" style="color:rgba(255,255,255,0.8);">Nuestros asesores diseñan tu viaje a medida. Cotización gratuita.</p>
+                <a href="<?= Router::url('/asesoria') ?>"
+                   class="inline-flex items-center gap-2 bg-white font-black px-5 py-2.5 rounded-xl hover:shadow-lg transition-all active:scale-95 text-sm"
+                   style="color:#00687A;">
+                    <span class="material-symbols-outlined text-lg">arrow_forward</span>
+                    Solicitar Asesoría
+                </a>
             </div>
         </aside>
     </div>
@@ -163,8 +239,8 @@ const DEST_IMAGES = {
     'cartagena': { hero: 'photo-1583531352515-8884af8ae22d', gallery: ['photo-1559128010-7c1ad6e1b6a5'] },
     'rio': { hero: 'photo-1483729558449-99ef09a8c325', gallery: ['photo-1516306580123-e6e52b1b7b5f','photo-1544989164-31dc3291c2b1'] },
     'buenos aires': { hero: 'photo-1589909202802-8f4aadce1849', gallery: [] },
-    'lima': { hero: 'photo-1531968455001-5c5272a67c71', gallery: [] },
-    'iquitos': { hero: 'photo-1563514227147-6d2ff665a6a0', gallery: [] },
+    'lima': { hero: 'photo-1577587230708-187fdbef4d91', gallery: [] },
+    'iquitos': { hero: 'photo-1619546952812-520e98064a52', gallery: [] },
     'bogota': { hero: 'photo-1568632234157-ce7aecd03d0d', gallery: [] },
 };
 
@@ -188,10 +264,6 @@ function searchDestination() {
     const q = document.getElementById('searchInput').value.trim();
     if (q) window.location.href = '<?= Router::url("/search/results") ?>?q=' + encodeURIComponent(q);
 }
-
-document.getElementById('searchInput').addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') searchDestination();
-});
 
 async function loadDestinationData(dest) {
     loadHeroImage(dest);
@@ -331,27 +403,29 @@ async function loadHotels(dest) {
         const data = await res.json();
         if (data.hotels && data.hotels.length > 0) {
             container.innerHTML = data.hotels.slice(0, 4).map(h => `
-                <div class="flex gap-4 items-start">
-                    <div class="w-16 h-16 rounded-lg bg-white overflow-hidden shrink-0 shadow-sm">
-                        <img src="${h.image || ''}" alt="${h.name}" class="w-full h-full object-cover" onerror="this.parentElement.innerHTML='<div class=\\'w-full h-full bg-turquesa/10 flex items-center justify-center\\'><span class=\\'material-symbols-outlined text-turquesa\\'>hotel</span></div>'">
+                <div class="flex gap-3 items-center p-3 rounded-xl" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.08);">
+                    <div class="w-14 h-14 rounded-lg overflow-hidden shrink-0" style="background:rgba(74,190,217,0.15);">
+                        <img src="${h.image || ''}" alt="${h.name}" class="w-full h-full object-cover"
+                            onerror="this.parentElement.innerHTML='<div style=\\'width:100%;height:100%;display:flex;align-items:center;justify-content:center;\\'><span class=\\'material-symbols-outlined\\' style=\\'color:#4ABED9;\\'>hotel</span></div>'">
                     </div>
                     <div class="flex-grow min-w-0">
-                        <h4 class="font-bold text-sm text-petroleo truncate">${h.name}</h4>
-                        <div class="flex items-center gap-1 text-turquesa mt-1">
-                            ${'<span class="material-symbols-outlined text-[14px]" style="font-variation-settings:\'FILL\' 1">star</span>'.repeat(Math.min(Math.round(parseFloat(h.rating) || 4), 5))}
-                            <span class="text-[11px] text-petroleo/50 ml-1">${h.rating || ''}</span>
+                        <h4 class="font-bold text-sm text-white truncate">${h.name}</h4>
+                        <div class="flex items-center gap-0.5 mt-1" style="color:#4ABED9;">
+                            ${'<span class="material-symbols-outlined text-[13px]" style="font-variation-settings:\'FILL\' 1">star</span>'.repeat(Math.min(Math.round(parseFloat(h.rating) || 4), 5))}
+                            <span class="text-[11px] ml-1" style="color:rgba(255,255,255,0.4);">${h.rating || ''}</span>
                         </div>
-                        <p class="text-xs text-turquesa-dark font-bold mt-1">${h.price || ''}</p>
+                        <p class="text-xs font-black mt-0.5" style="color:#4ABED9;">${h.price || 'Consultar precio'}</p>
                     </div>
                 </div>
             `).join('');
         } else {
-            container.innerHTML = '<p class="text-sm text-petroleo/40 text-center py-4">No se encontraron hoteles</p>';
+            container.innerHTML = '<p style="color:rgba(255,255,255,0.35);" class="text-sm text-center py-4">No se encontraron hoteles</p>';
         }
     } catch(e) {
-        container.innerHTML = '<p class="text-sm text-petroleo/40 text-center py-4">Error al cargar hoteles</p>';
+        container.innerHTML = '<p style="color:rgba(255,255,255,0.35);" class="text-sm text-center py-4">Error al cargar hoteles</p>';
     }
 }
+
 
 async function loadExperiences(dest) {
     const container = document.getElementById('experiencesGrid');
@@ -469,3 +543,136 @@ function loadSeasonInfo(dest) {
     }
 }
 </script>
+
+<!-- Autocomplete styles (resultados) -->
+<style>
+.results-ac-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    z-index: 30;
+    margin-top: 0.4rem;
+    background: rgba(255,255,255,0.97);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-radius: 0.875rem;
+    box-shadow: 0 16px 48px rgba(27,58,75,0.15);
+    border: 1px solid rgba(27,58,75,0.06);
+    overflow: hidden;
+    max-height: 360px;
+    overflow-y: auto;
+}
+.results-ac-dropdown.hidden { display: none; }
+.res-ac-item {
+    display: flex;
+    align-items: center;
+    gap: 0.875rem;
+    padding: 0.8rem 1.25rem;
+    cursor: pointer;
+    transition: background 0.15s ease;
+    text-decoration: none;
+    color: inherit;
+    border-bottom: 1px solid rgba(27,58,75,0.04);
+}
+.res-ac-item:last-child { border-bottom: none; }
+.res-ac-item:hover, .res-ac-item.res-ac-active { background: rgba(74,190,217,0.08); }
+.res-ac-icon { width:2.5rem; height:2.5rem; border-radius:0.6rem; background:linear-gradient(135deg,rgba(74,190,217,0.12),rgba(0,104,122,0.08)); display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:1.25rem; }
+.res-ac-name { font-weight:700; font-size:0.875rem; color:#1B3A4B; }
+.res-ac-name mark { background:rgba(74,190,217,0.25); color:#00687A; border-radius:2px; padding:0 1px; }
+.res-ac-region { font-size:0.7rem; color:rgba(27,58,75,0.45); margin-top:0.1rem; }
+.res-ac-loading { display:flex; align-items:center; justify-content:center; gap:0.5rem; padding:1rem; color:rgba(27,58,75,0.35); font-size:0.8rem; font-weight:600; }
+.res-ac-empty { padding:1.25rem; text-align:center; color:rgba(27,58,75,0.35); font-size:0.8rem; }
+</style>
+
+<script>
+/* ── Autocomplete Search Results ── */
+(function() {
+    const input    = document.getElementById('searchInput');
+    const dropdown = document.getElementById('resultsSuggestions');
+    const wrapper  = document.getElementById('resultsSearchWrapper');
+    if (!input || !dropdown || !wrapper) return;
+
+    let debounce   = null;
+    let activeIdx  = -1;
+    let results    = [];
+    const BASE     = '<?= Router::url("/search/results") ?>';
+
+    function flag(code) {
+        if (!code || code.length !== 2) return '🌍';
+        const c = code.toUpperCase();
+        return String.fromCodePoint(...[...c].map(l => 0x1F1E6 - 65 + l.charCodeAt(0)));
+    }
+    function hl(text, q) {
+        if (!q) return text;
+        return text.replace(new RegExp('(' + q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&') + ')','gi'),'<mark>$1</mark>');
+    }
+    function show() { dropdown.classList.remove('hidden'); }
+    function hide() { dropdown.classList.add('hidden'); activeIdx = -1; results = []; }
+
+    function render(q) {
+        dropdown.innerHTML = results.map((r,i) => {
+            const name   = r.name || '';
+            const region = [r.admin1, r.country].filter(Boolean).join(', ');
+            return '<a class="res-ac-item' + (i===activeIdx?' res-ac-active':'') + '" data-idx="'+i+'" href="'+BASE+'?q='+encodeURIComponent(name+(r.country?', '+r.country:''))+'">' +
+                   '<div class="res-ac-icon"><span style="font-size:1.3rem">' + flag(r.country_code) + '</span></div>' +
+                   '<div class="flex-1 min-w-0"><div class="res-ac-name">' + hl(name,q) + '</div><div class="res-ac-region">' + region + '</div></div>' +
+                   '<span class="material-symbols-outlined text-turquesa-dark" style="font-size:16px">arrow_forward</span></a>';
+        }).join('');
+    }
+
+    async function suggest(q) {
+        if (q.length < 2) { hide(); return; }
+        show();
+        dropdown.innerHTML = '<div class="res-ac-loading"><span class="material-symbols-outlined animate-spin">progress_activity</span> Buscando destinos...</div>';
+        try {
+            const res  = await fetch('https://geocoding-api.open-meteo.com/v1/search?name='+encodeURIComponent(q)+'&count=6&language=es&format=json');
+            const data = await res.json();
+            if (!data.results || !data.results.length) {
+                dropdown.innerHTML = '<div class="res-ac-empty">No se encontraron destinos para "'+q+'"</div>';
+                results = []; return;
+            }
+            results   = data.results;
+            activeIdx = -1;
+            render(q);
+        } catch(e) { dropdown.innerHTML = '<div class="res-ac-empty">Error al buscar</div>'; results = []; }
+    }
+
+    input.addEventListener('input', function() {
+        clearTimeout(debounce);
+        const q = this.value.trim();
+        if (q.length < 2) { hide(); return; }
+        debounce = setTimeout(() => suggest(q), 280);
+    });
+
+    input.addEventListener('keydown', function(e) {
+        if (dropdown.classList.contains('hidden') || !results.length) return;
+        if (e.key === 'ArrowDown')  { e.preventDefault(); activeIdx = Math.min(activeIdx+1, results.length-1); updateActive(); }
+        else if (e.key === 'ArrowUp') { e.preventDefault(); activeIdx = Math.max(activeIdx-1, -1); updateActive(); }
+        else if (e.key === 'Enter' && activeIdx >= 0) { e.preventDefault(); const el = dropdown.querySelector('.res-ac-item[data-idx="'+activeIdx+'"]'); if(el) window.location.href = el.href; }
+        else if (e.key === 'Escape') { hide(); }
+    });
+
+    function updateActive() {
+        dropdown.querySelectorAll('.res-ac-item').forEach((el,i) => el.classList.toggle('res-ac-active', i === activeIdx));
+        if (activeIdx >= 0 && results[activeIdx]) input.value = results[activeIdx].name;
+    }
+
+    document.addEventListener('click', function(e) {
+        if (!wrapper.contains(e.target)) hide();
+    });
+
+    input.addEventListener('focus', function() {
+        if (this.value.trim().length >= 2 && results.length > 0) { show(); render(this.value.trim()); }
+    });
+})();
+</script>
+
+<!-- Floating WhatsApp Button -->
+<a href="https://wa.me/51976324716?text=<?= rawurlencode('¡Hola Aventuras Travel! 🌴✈️ Estoy explorando destinos y me gustaría recibir asesoría personalizada.') ?>"
+   target="_blank" rel="noopener"
+   class="fixed bottom-6 right-6 z-50 flex items-center gap-3 pl-4 pr-5 py-3 bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-full shadow-2xl shadow-emerald-500/30 hover:shadow-emerald-500/40 transition-all active:scale-95"
+   title="Escríbenos por WhatsApp">
+    <svg class="w-6 h-6 shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+    <span class="hidden sm:inline text-sm">¿Necesitas ayuda?</span>
+</a>

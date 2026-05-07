@@ -10,7 +10,11 @@ class AuthController extends Controller {
     public function showLogin(): void {
         if ($this->auth()) {
             $user = $this->auth();
-            $this->redirectByRole($user['rol']);
+            if ($user['rol'] === 'admin') {
+                $this->redirect('/admin/dashboard');
+            } else {
+                $this->redirect('/');
+            }
             return;
         }
         $data = [
@@ -81,7 +85,7 @@ class AuthController extends Controller {
                 $this->redirect('/leader/dashboard');
                 break;
             case 'cliente_colegio':
-                $this->redirect('/client/dashboard');
+                $this->redirect('/');
                 break;
             default: // cliente_familiar
                 $this->redirect('/client/dashboard');
@@ -101,10 +105,10 @@ class AuthController extends Controller {
     }
 
     /**
-     * Cerrar sesión
+     * Cerrar sesión de forma segura
      */
     public function logout(): void {
-        session_destroy();
-        $this->redirect('/login');
+        Session::destroy();
+        $this->redirect('/');
     }
 }

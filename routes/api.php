@@ -27,3 +27,8 @@ Router::get('/api/hotels', [ImageApiController::class, 'getHotels']);
 Router::get('/api/places', [ImageApiController::class, 'getPlaces']);
 Router::get('/api/vuelos/buscar', [SaleController::class, 'searchFlights']);
 
+// API de WhatsApp (protegida)
+Router::post('/api/whatsapp/send-credentials', [WhatsAppApiController::class, 'sendCredentials'], [AuthMiddleware::class, AdminMiddleware::class]);
+Router::post('/api/whatsapp/send-message', [WhatsAppApiController::class, 'sendMessage'], [AuthMiddleware::class, AdminMiddleware::class]);
+Router::get('/api/whatsapp/test', [WhatsAppApiController::class, 'test'], [AuthMiddleware::class, AdminMiddleware::class]);
+

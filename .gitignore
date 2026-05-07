@@ -3,10 +3,20 @@
 *.log
 mailoutput/
 
+# === CONFIGURACIÓN SENSIBLE (NO subir a Git) ===
+config.php
+
+# === Logs de producción ===
+logs/*.log
+
 # === Storage (archivos subidos por usuarios) ===
 storage/comprobantes/*
+storage/vouchers/*
+storage/contratos/*
 storage/cache/serpapi/*
 !storage/comprobantes/.gitkeep
+!storage/vouchers/.gitkeep
+!storage/contratos/.gitkeep
 !storage/cache/.gitkeep
 !storage/cache/serpapi/.gitkeep
 

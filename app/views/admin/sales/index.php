@@ -12,9 +12,9 @@ $pendiente = array_column($chartData, 'pendiente');
 ?>
 
 <!-- Cabecera -->
-<div class="flex justify-between items-center mb-6">
+<div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
     <div>
-        <h1 class="text-2xl font-black text-petroleo">Gestión de Ventas</h1>
+        <h1 class="text-xl sm:text-2xl font-black text-petroleo">Gestión de Ventas</h1>
         <p class="text-xs text-petroleo/60 mt-1">Control de grupos familiares y colegios</p>
     </div>
     <a href="<?= Router::url('/admin/sales/create') ?>" class="flex items-center gap-2 bg-turquesa hover:bg-turquesa-dark text-white px-4 py-2 text-sm rounded-lg font-bold transition-all shadow border border-petroleo/10">
@@ -24,7 +24,7 @@ $pendiente = array_column($chartData, 'pendiente');
 </div>
 
 <!-- Tarjetas de Estadísticas -->
-<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
+<div class="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 mb-6">
     <div class="bg-white rounded-lg p-3 border border-petroleo/5 shadow-sm">
         <div class="flex justify-between items-start mb-2">
             <p class="text-[10px] font-bold uppercase tracking-widest text-turquesa-dark">Total Grupos</p>
@@ -62,17 +62,17 @@ $pendiente = array_column($chartData, 'pendiente');
     </div>
 </div>
 
-<div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8 mb-6 sm:mb-8">
     <!-- Lista de Grupos -->
     <div class="lg:col-span-2 bg-white rounded-xl border border-petroleo/5 shadow-sm overflow-hidden">
         
         <!-- Filtros y Título -->
-        <div class="p-4 border-b border-petroleo/5 flex justify-between items-center bg-superficie/30">
-            <h2 class="text-lg font-black text-petroleo flex items-center gap-2">
+        <div class="p-3 sm:p-4 border-b border-petroleo/5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 bg-superficie/30">
+            <h2 class="text-base sm:text-lg font-black text-petroleo flex items-center gap-2">
                 <span class="material-symbols-outlined text-[18px] text-turquesa">list_alt</span>
                 Directorio
             </h2>
-            <div class="flex gap-2">
+            <div class="flex flex-wrap gap-2">
                 <a href="<?= Router::url('/admin/sales') ?>" class="px-3 py-1.5 rounded text-xs font-bold transition-all <?= !$filtro ? 'bg-petroleo text-white shadow' : 'bg-white text-petroleo border border-petroleo/10 hover:bg-superficie' ?>">
                     Todos
                 </a>

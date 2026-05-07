@@ -1,14 +1,15 @@
 <!-- ADMIN PASAJEROS – TAILWIND -->
 <?php $pasajeros = $pasajeros ?? []; ?>
 
-<h1 class="text-3xl font-black text-petroleo mb-8">Registro de Pasajeros</h1>
+<h1 class="text-2xl sm:text-3xl font-black text-petroleo mb-6 sm:mb-8">Registro de Pasajeros</h1>
 
-<div class="bg-white rounded-xl p-8 border border-petroleo/5 shadow-sm">
-    <div class="flex justify-between items-center mb-6">
-        <h2 class="text-xl font-black text-petroleo"><?= count($pasajeros) ?> Pasajeros Registrados</h2>
-        <input type="text" placeholder="Buscar pasajero..." class="bg-superficie border-none rounded-xl px-4 py-2 text-sm w-64 focus:ring-2 focus:ring-turquesa/30">
+<div class="bg-white rounded-xl p-4 sm:p-6 md:p-8 border border-petroleo/5 shadow-sm">
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
+        <h2 class="text-lg sm:text-xl font-black text-petroleo"><?= count($pasajeros) ?> Pasajeros Registrados</h2>
+        <input type="text" placeholder="Buscar pasajero..." class="bg-superficie border-none rounded-xl px-4 py-2 text-sm w-full sm:w-64 focus:ring-2 focus:ring-turquesa/30">
     </div>
-    <table class="w-full">
+    <div class="overflow-x-auto -mx-4 sm:mx-0">
+    <table class="w-full min-w-[600px]">
         <thead>
             <tr class="text-xs uppercase tracking-widest text-petroleo/40 border-b border-petroleo/5">
                 <th class="text-left pb-3">Pasajero</th>
@@ -43,4 +44,5 @@
             <?php endif; ?>
         </tbody>
     </table>
+    </div>
 </div>

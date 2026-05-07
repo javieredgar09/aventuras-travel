@@ -158,6 +158,12 @@ foreach ($cuotas as $q) {
                 <a href="<?= Router::url('/admin/payments') ?>" class="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-superficie transition-all text-sm font-medium text-petroleo">
                     <span class="material-symbols-outlined text-petroleo/40 text-base">account_balance_wallet</span> Gestión de Pagos
                 </a>
+                <button onclick="document.getElementById('modal-upload-contrato').classList.remove('hidden')" class="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-blue-50 transition-all text-sm font-medium text-blue-600">
+                    <span class="material-symbols-outlined text-base">upload_file</span> Subir Contrato PDF
+                </button>
+                <button onclick="document.getElementById('modal-upload-voucher').classList.remove('hidden')" class="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-purple-50 transition-all text-sm font-medium text-purple-600">
+                    <span class="material-symbols-outlined text-base">receipt</span> Subir Voucher de Servicio
+                </button>
                 <form action="<?= Router::url('/admin/contracts/delete/' . $contrato['id']) ?>" method="POST" data-confirm="¿Estás seguro de anular este contrato? Esta acción no se puede deshacer.">
                     <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token) ?>">
                     <button type="submit" class="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-red-50 transition-all text-sm font-medium text-red-500">
@@ -166,6 +172,30 @@ foreach ($cuotas as $q) {
                 </form>
             </div>
         </div>
+
+        <!-- Documentos Subidos (Contratos PDF) -->
+        <?php $archivos = $archivos ?? []; ?>
+        <?php if (!empty($archivos)): ?>
+        <div class="bg-white rounded-2xl p-6 border border-petroleo/5 shadow-sm">
+            <h2 class="text-sm font-bold uppercase tracking-widest text-petroleo/40 mb-4 flex items-center gap-2">
+                <span class="material-symbols-outlined text-turquesa text-base">description</span> Documentos (<?= count($archivos) ?>)
+            </h2>
+            <div class="space-y-2">
+                <?php foreach ($archivos as $arch): ?>
+                <a href="<?= Router::url('/storage/contratos/' . htmlspecialchars($arch['nombre_hash'])) ?>" target="_blank" class="flex items-center gap-3 p-3 rounded-xl hover:bg-superficie transition-all">
+                    <div class="w-9 h-9 bg-blue-100 text-blue-600 rounded-lg flex items-center justify-center">
+                        <span class="material-symbols-outlined text-base"><?= str_contains($arch['mime_type'] ?? '', 'pdf') ? 'picture_as_pdf' : 'image' ?></span>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <p class="text-sm font-medium text-petroleo truncate"><?= htmlspecialchars($arch['nombre_original'] ?? $arch['nombre_hash']) ?></p>
+                        <p class="text-[10px] text-petroleo/40"><?= htmlspecialchars(ucfirst($arch['tipo'] ?? 'documento')) ?> · <?= !empty($arch['created_at']) ? date('d M Y', strtotime($arch['created_at'])) : '' ?></p>
+                    </div>
+                    <span class="material-symbols-outlined text-petroleo/20 text-base">open_in_new</span>
+                </a>
+                <?php endforeach; ?>
+            </div>
+        </div>
+        <?php endif; ?>
     </div>
 
     <!-- RIGHT: Cuotas + Pagos -->
@@ -382,6 +412,101 @@ foreach ($cuotas as $q) {
             </div>
         </div>
         <?php endif; ?>
+
+        <!-- Vouchers de Servicio -->
+        <?php $vouchers = $vouchers ?? []; ?>
+        <?php if (!empty($vouchers)): ?>
+        <div class="bg-white rounded-2xl p-6 border border-petroleo/5 shadow-sm">
+            <h2 class="text-sm font-bold uppercase tracking-widest text-petroleo/40 mb-4 flex items-center gap-2">
+                <span class="material-symbols-outlined text-turquesa text-base">receipt</span> Vouchers de Servicio (<?= count($vouchers) ?>)
+            </h2>
+            <div class="space-y-2">
+                <?php foreach ($vouchers as $vc): ?>
+                <a href="<?= Router::url('/storage/vouchers/' . htmlspecialchars($vc['archivo_url'])) ?>" target="_blank" class="flex items-center gap-4 p-4 rounded-xl bg-petroleo/[0.02] hover:bg-superficie transition-all">
+                    <div class="w-10 h-10 rounded-xl bg-purple-100 text-purple-600 flex items-center justify-center">
+                        <span class="material-symbols-outlined">receipt_long</span>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <p class="text-sm font-bold text-petroleo truncate"><?= htmlspecialchars($vc['titulo'] ?? 'Voucher') ?></p>
+                        <p class="text-xs text-petroleo/40"><?= htmlspecialchars(ucfirst($vc['tipo_voucher'] ?? 'general')) ?> · <?= !empty($vc['fecha_subida']) ? date('d M Y', strtotime($vc['fecha_subida'])) : '' ?></p>
+                    </div>
+                    <span class="material-symbols-outlined text-petroleo/20 text-base">open_in_new</span>
+                </a>
+                <?php endforeach; ?>
+            </div>
+        </div>
+        <?php endif; ?>
+    </div>
+</div>
+
+<!-- MODAL: Subir Contrato PDF -->
+<div id="modal-upload-contrato" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
+        <div class="bg-petroleo p-5 text-white">
+            <div class="flex justify-between items-center">
+                <div>
+                    <h3 class="text-lg font-bold">Subir Contrato PDF</h3>
+                    <p class="text-xs text-white/50"><?= htmlspecialchars($contrato['codigo'] ?? '') ?></p>
+                </div>
+                <button onclick="document.getElementById('modal-upload-contrato').classList.add('hidden')" class="text-white/50 hover:text-white transition-colors">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+        </div>
+        <form action="<?= Router::url('/admin/contracts/' . $contrato['id'] . '/upload-contract') ?>" method="POST" enctype="multipart/form-data" class="p-6 space-y-4">
+            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token) ?>">
+            <div>
+                <label class="block text-xs font-bold uppercase tracking-widest text-petroleo/50 mb-1">Archivo del Contrato</label>
+                <input type="file" name="contrato_pdf" accept=".pdf,.jpg,.jpeg,.png" required class="w-full bg-superficie border-none rounded-xl px-4 py-2.5 text-sm file:mr-4 file:rounded-lg file:border-0 file:bg-blue-600 file:text-white file:px-3 file:py-1 file:text-xs file:font-bold">
+                <p class="text-[10px] text-petroleo/40 mt-1">PDF, JPG o PNG · Máx. 10 MB</p>
+            </div>
+            <button type="submit" class="w-full py-3 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-colors text-sm flex items-center justify-center gap-2">
+                <span class="material-symbols-outlined text-sm">upload_file</span> Subir Contrato
+            </button>
+        </form>
+    </div>
+</div>
+
+<!-- MODAL: Subir Voucher de Servicio -->
+<div id="modal-upload-voucher" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
+        <div class="bg-petroleo p-5 text-white">
+            <div class="flex justify-between items-center">
+                <div>
+                    <h3 class="text-lg font-bold">Subir Voucher de Servicio</h3>
+                    <p class="text-xs text-white/50"><?= htmlspecialchars($contrato['codigo'] ?? '') ?></p>
+                </div>
+                <button onclick="document.getElementById('modal-upload-voucher').classList.add('hidden')" class="text-white/50 hover:text-white transition-colors">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+        </div>
+        <form action="<?= Router::url('/admin/contracts/' . $contrato['id'] . '/upload-voucher') ?>" method="POST" enctype="multipart/form-data" class="p-6 space-y-4">
+            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token) ?>">
+            <div>
+                <label class="block text-xs font-bold uppercase tracking-widest text-petroleo/50 mb-1">Tipo de Voucher</label>
+                <select name="tipo_voucher" class="w-full bg-superficie border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-purple-300">
+                    <option value="hotel">Hotel</option>
+                    <option value="vuelo">Vuelo</option>
+                    <option value="tour">Tour / Excursión</option>
+                    <option value="seguro">Seguro de Viaje</option>
+                    <option value="transporte">Transporte</option>
+                    <option value="general">General</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs font-bold uppercase tracking-widest text-petroleo/50 mb-1">Título / Descripción</label>
+                <input type="text" name="titulo" placeholder="Ej: Voucher Hotel Marriott Lima" class="w-full bg-superficie border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-purple-300">
+            </div>
+            <div>
+                <label class="block text-xs font-bold uppercase tracking-widest text-petroleo/50 mb-1">Archivo</label>
+                <input type="file" name="voucher_file" accept=".pdf,.jpg,.jpeg,.png" required class="w-full bg-superficie border-none rounded-xl px-4 py-2.5 text-sm file:mr-4 file:rounded-lg file:border-0 file:bg-purple-600 file:text-white file:px-3 file:py-1 file:text-xs file:font-bold">
+                <p class="text-[10px] text-petroleo/40 mt-1">PDF, JPG o PNG · Máx. 10 MB</p>
+            </div>
+            <button type="submit" class="w-full py-3 bg-purple-600 text-white font-bold rounded-xl hover:bg-purple-700 transition-colors text-sm flex items-center justify-center gap-2">
+                <span class="material-symbols-outlined text-sm">receipt</span> Subir Voucher
+            </button>
+        </form>
     </div>
 </div>
 
@@ -548,6 +673,14 @@ document.querySelectorAll('[data-confirm]').forEach(form => {
 });
 
 document.getElementById('modal-pago-contrato')?.addEventListener('click', function(e) {
+    if (e.target === this) this.classList.add('hidden');
+});
+
+document.getElementById('modal-upload-contrato')?.addEventListener('click', function(e) {
+    if (e.target === this) this.classList.add('hidden');
+});
+
+document.getElementById('modal-upload-voucher')?.addEventListener('click', function(e) {
     if (e.target === this) this.classList.add('hidden');
 });
 

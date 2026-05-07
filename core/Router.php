@@ -114,10 +114,15 @@ class Router {
      */
     private static function getRequestUri(): string {
         $uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
-        // Remover base path del proyecto (soporta /aventuras/public y /aventuras)
-        $basePaths = ['/aventuras/public', '/aventuras'];
+        $base = defined('APP_BASE') ? APP_BASE : '/aventuras';
+
+        // Remover base path del proyecto
+        $basePaths = array_filter([$base . '/public', $base], fn($b) => $b !== '');
+        $basePaths[] = '/aventuras/public';
+        $basePaths[] = '/aventuras';
+
         foreach ($basePaths as $basePath) {
-            if (strpos($uri, $basePath) === 0) {
+            if ($basePath !== '' && strpos($uri, $basePath) === 0) {
                 $uri = substr($uri, strlen($basePath));
                 break;
             }
@@ -143,9 +148,10 @@ class Router {
     }
 
     /**
-     * Generar URL
+     * Generar URL con base path configurable
      */
     public static function url(string $path = ''): string {
-        return '/aventuras' . $path;
+        $base = defined('APP_BASE') ? APP_BASE : '/aventuras';
+        return rtrim($base, '/') . '/' . ltrim($path, '/');
     }
 }

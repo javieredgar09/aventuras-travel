@@ -18,7 +18,7 @@ class HomeController extends Controller {
 
     public function promotions(): void {
         $promocionModel = new Promocion();
-        $promociones = $promocionModel->all('fecha_fin DESC');
+        $promociones = $promocionModel->getAllWithStatus();
 
         $data = [
             'title'       => 'Promociones - Aventuras Travel',

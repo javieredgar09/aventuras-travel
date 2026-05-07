@@ -32,10 +32,10 @@
             <p class="font-bold">AVENTURAS TRAVEL PUCALLPA</p>
             <p>RUC: 10475951587 | Javier Edgar Sandy Da Cruz | DNI: 47228319</p>
             <p>Dirección: Jirón Zavala 568A, Pucallpa</p>
-            <p>Teléfono: 976324716 | Email: reservas.aventurastravelpcl@gmail.com</p>
+            <p>Teléfono: 976324716 | Email: aventurastravelpucallpa@gmail.com</p>
         </div>
         <div class="text-right">
-            <img src="/aventuras/img/a_color.png" alt="Aventuras Travel" class="h-16 inline-block" onerror="this.style.display='none'">
+            <img src="<?= Router::url('/img/a_color.png') ?>" alt="Aventuras Travel" class="h-16 inline-block" onerror="this.style.display='none'">
             <div class="mt-2 text-xs font-bold text-gray-500">Fecha de Firma: <?= $contrato['fecha_firma'] ? date('d/m/Y', strtotime($contrato['fecha_firma'])) : date('d/m/Y') ?></div>
         </div>
     </div>

@@ -475,4 +475,188 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
     });
+
+    // ==================== CLIENT PORTAL ====================
+    // User dropdown toggle
+    const userBtn = document.getElementById('user-menu-btn');
+    const userDrop = document.getElementById('user-dropdown');
+    if (userBtn && userDrop) {
+        userBtn.addEventListener('click', function (e) {
+            e.stopPropagation();
+            userDrop.classList.toggle('hidden');
+        });
+        document.addEventListener('click', function () {
+            userDrop.classList.add('hidden');
+        });
+    }
+
+    // Flash auto-dismiss
+    document.querySelectorAll('[data-flash]').forEach(function (el) {
+        setTimeout(function () {
+            el.style.transition = 'opacity 0.4s';
+            el.style.opacity = '0';
+            setTimeout(function () { el.remove(); }, 400);
+        }, 5000);
+    });
+
+    // Countdown timer
+    const countdownEl = document.getElementById('countdown-days');
+    if (countdownEl) {
+        const target = countdownEl.dataset.target;
+        if (target) {
+            var diff = Math.max(0, Math.ceil((new Date(target) - new Date()) / 86400000));
+            countdownEl.textContent = diff;
+        }
+    }
+
+    // File upload label
+    document.querySelectorAll('input[type="file"]').forEach(function (input) {
+        input.addEventListener('change', function () {
+            var label = this.closest('label') || this.parentElement;
+            var span = label ? label.querySelector('.file-name') : null;
+            if (span && this.files.length) {
+                span.textContent = this.files[0].name;
+            }
+        });
+    });
+
+    // Modal open/close
+    document.querySelectorAll('[data-modal-target]').forEach(function (trigger) {
+        trigger.addEventListener('click', function () {
+            var modal = document.getElementById(this.dataset.modalTarget);
+            if (modal) modal.classList.remove('hidden');
+        });
+    });
+    document.querySelectorAll('[data-modal-close]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            var modal = this.closest('[id]');
+            if (modal) modal.classList.add('hidden');
+        });
+    });
+
+    // Mobile bottom nav active highlight
+    var currentPath = window.location.pathname;
+    document.querySelectorAll('.mobile-nav-link').forEach(function (link) {
+        if (currentPath.indexOf(link.getAttribute('href')) !== -1) {
+            link.classList.add('text-primary');
+        }
+    });
+
+    // ==================== CLIENT DASHBOARD ====================
+    const openBtn = document.getElementById('open-itinerary-edit');
+    const modalIt = document.getElementById('modal-itinerary');
+    const cancelIt = document.getElementById('cancel-it');
+    const formIt = document.getElementById('form-itinerary');
+    const mobileBtn = document.getElementById('mobileMenuBtn');
+    const mobileOverlay = document.getElementById('mobileNavOverlay');
+
+    if (openBtn && modalIt) {
+        openBtn.addEventListener('click', ()=> modalIt.style.display = 'flex');
+        if (cancelIt) cancelIt.addEventListener('click', ()=> modalIt.style.display = 'none');
+    }
+    if (mobileBtn && mobileOverlay) {
+        mobileBtn.addEventListener('click', ()=> {
+            mobileOverlay.style.display = mobileOverlay.style.display === 'flex' ? 'none' : 'flex';
+        });
+        mobileOverlay.addEventListener('click', (e)=>{ if (e.target === mobileOverlay) mobileOverlay.style.display = 'none'; });
+    }
+    if (formIt) {
+        formIt.addEventListener('submit', async function(e){
+            e.preventDefault();
+            const data = new FormData(formIt);
+            const payload = {
+                grupo_id: data.get('grupo_id'),
+                detalle_json: data.get('detalle_json'),
+                csrf_token: data.get('csrf_token')
+            };
+            try {
+                const res = await fetch('/leader/group/' + encodeURIComponent(payload.grupo_id) + '/itinerary/save', {
+                    method: 'POST',
+                    headers: {'Content-Type':'application/json'},
+                    body: JSON.stringify(payload)
+                });
+                const js = await res.json();
+                if (js.success) {
+                    alert('Itinerario guardado. Refresca la página para ver los cambios.');
+                    modalIt.style.display = 'none';
+                } else {
+                    alert('Error: ' + (js.message || 'no se pudo guardar'));
+                }
+            } catch (err) {
+                alert('Error de red: ' + err.message);
+            }
+        });
+    }
+
+    // ==================== CLIENT CONTRACT ====================
+    const btnUpload = document.getElementById('btnUpload');
+    const uploadContainer = document.getElementById('uploadFormContainer');
+    const cancelUpload = document.getElementById('cancelUpload');
+    const uploadForm = document.getElementById('uploadForm');
+    const fileInput = document.getElementById('fileInput');
+    const uploadMsg = document.getElementById('uploadMsg');
+
+    if (btnUpload && uploadContainer) {
+        btnUpload.addEventListener('click', function(){
+            uploadContainer.style.display = uploadContainer.style.display === 'none' ? 'block' : 'none';
+            window.scrollTo({top: uploadContainer.offsetTop - 80, behavior: 'smooth'});
+        });
+    }
+    if (cancelUpload && uploadContainer) {
+        cancelUpload.addEventListener('click', function(){
+            uploadContainer.style.display = 'none';
+        });
+    }
+    if (uploadForm) {
+        uploadForm.addEventListener('submit', function(e){
+            const f = fileInput.files[0];
+            if (!f) { e.preventDefault(); if (uploadMsg) uploadMsg.textContent = 'Seleccione un archivo.'; return; }
+            const allowed = ['application/pdf','image/jpeg','image/png'];
+            if (!allowed.includes(f.type)) { e.preventDefault(); if (uploadMsg) uploadMsg.textContent = 'Tipo de archivo no permitido.'; return; }
+            const max = 5 * 1024 * 1024;
+            if (f.size > max) { e.preventDefault(); if (uploadMsg) uploadMsg.textContent = 'Archivo demasiado grande. Máx 5MB.'; return; }
+        });
+    }
+
+    // Auto-open upload if ?upload=1
+    const pageParams = new URLSearchParams(window.location.search);
+    if (pageParams.get('upload') === '1') {
+        const uploadTrigger = document.querySelector('.open-upload-panel');
+        if (uploadTrigger) uploadTrigger.click();
+    }
+
+    // ==================== ADMIN SPECIFIC ====================
+    document.querySelectorAll('[data-toggle-group]').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const idx = parseInt(btn.getAttribute('data-toggle-group'), 10);
+            if (!isNaN(idx)) {
+                const sections = document.querySelectorAll('.group-section');
+                sections.forEach((s, i) => { s.style.display = (i === idx ? 'block' : 'none'); });
+            }
+        });
+    });
+
+    // ==================== CLIENT PORTAL DASHBOARD ====================
+    const btnToggleUpload = document.getElementById('btnToggleUpload');
+    const uploadPanel = document.getElementById('uploadPanel');
+    const btnCancelUpload = document.getElementById('btnCancelUpload');
+    const btnContact = document.getElementById('btnContact');
+
+    if (btnToggleUpload && uploadPanel) {
+        btnToggleUpload.addEventListener('click', () => {
+            uploadPanel.style.display = uploadPanel.style.display === 'none' ? 'block' : 'none';
+            uploadPanel.scrollIntoView({behavior:'smooth', block:'center'});
+        });
+    }
+    if (btnCancelUpload && uploadPanel) {
+        btnCancelUpload.addEventListener('click', () => { uploadPanel.style.display = 'none'; });
+    }
+    if (btnContact) {
+        btnContact.addEventListener('click', () => { window.location.href = '/aventuras/client/support'; });
+    }
+    // Progress bar animation
+    document.querySelectorAll('.progress-inner').forEach(el => {
+        const w = el.style.width || el.getAttribute('data-width');
+        if (w) { setTimeout(() => el.style.width = w, 100); }
+    });
 });

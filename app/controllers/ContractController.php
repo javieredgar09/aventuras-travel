@@ -27,9 +27,25 @@ class ContractController extends Controller {
         $contrato['cuotas'] = $cuotaModel->getByEntidad('contrato', (int) $id);
         $contrato['resumen_cuotas'] = $cuotaModel->getSummary('contrato', (int) $id);
 
+        // Load archivos (contratos PDF subidos)
+        $archivoModel = new Archivo();
+        $archivos = $archivoModel->where('contrato_id = ?', [(int) $id], 'id DESC');
+
+        // Load vouchers de servicio
+        $voucherModel = new Voucher();
+        $grupoId = $contrato['grupo_id'] ?? null;
+        $vouchers = [];
+        if ($grupoId) {
+            $vouchers = $voucherModel->getByEntidad('grupo', (int) $grupoId);
+        }
+        $vouchersContrato = $voucherModel->getByEntidad('contrato', (int) $id);
+        $vouchers = array_merge($vouchers, $vouchersContrato);
+
         $data = [
             'title'      => $contrato['codigo'] . ' - Aventuras Travel',
             'contrato'   => $contrato,
+            'archivos'   => $archivos,
+            'vouchers'   => $vouchers,
             'csrf_token' => $this->generateCsrfToken(),
             'flash'      => $this->getFlash(),
         ];
@@ -176,6 +192,7 @@ class ContractController extends Controller {
             // Preferir valores enviados en el formulario, si faltan usar valores heredados del grupo
             $valorTotal = (float) $this->input('valor_total', $grupo['valor_total'] ?? 0);
             $depositoContrato = (float) $this->input('deposito', $grupo['deposito'] ?? 0);
+            $monedaContrato = $grupo['moneda_grupo'] ?? 'USD';
             
             // Titular Info
             $fechaFirma = $this->input('fecha_firma', date('Y-m-d'));
@@ -192,6 +209,7 @@ class ContractController extends Controller {
                 'codigo'            => $codigo,
                 'grupo_id'          => $grupoId,
                 'tipo'              => 'colegio',
+                'moneda_contrato'   => $monedaContrato,
                 'destino'           => $this->input('destino') ?: $grupo['destino'],
                 'destino_code'      => $this->input('destino_code') ?: ($grupo['destino_code'] ?? null),
                 'fecha_salida'      => $grupo['fecha_viaje'],
@@ -420,6 +438,30 @@ class ContractController extends Controller {
                     require_once __DIR__ . '/../services/EmailService.php';
                     $emailSvc = new EmailService();
                     $emailSvc->sendCredentials($titularCorreo, $titularNombre ?: 'Cliente', $codigo, $randomPass);
+
+                    // ── Enviar credenciales por WhatsApp ──────────────────────
+                    if (!empty($titularTel)) {
+                        try {
+                            require_once __DIR__ . '/../services/WhatsAppService.php';
+                            $whatsAppService = new WhatsAppService();
+                            $phoneNormalized = WhatsAppService::normalizePhoneNumber($titularTel);
+
+                            $waResult = $whatsAppService->sendCredentials(
+                                phoneNumber: $phoneNormalized,
+                                clientName: $titularNombre ?: 'Cliente',
+                                contractCode: $codigo,
+                                password: $randomPass
+                            );
+
+                            if ($waResult['success']) {
+                                error_log("[ContractController::store] ✅ WhatsApp enviado a: $phoneNormalized");
+                            } else {
+                                error_log("[ContractController::store] ❌ WhatsApp error: " . ($waResult['error'] ?? 'desconocido'));
+                            }
+                        } catch (Exception $waEx) {
+                            error_log('[ContractController::store] WhatsApp exception: ' . $waEx->getMessage());
+                        }
+                    }
                 } else {
                     // Si el usuario existe, vinculamos este contrato a su cliente_id existente si es posible
                     $clienteRow = $db->fetchOne("SELECT id FROM clientes WHERE usuario_id = ?", [$userExists['id']]);

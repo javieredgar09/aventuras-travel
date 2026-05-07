@@ -140,6 +140,6 @@
         <footer class="footer">&copy; <?= date('Y') ?> Aventuras Travel · Soporte: soporte@aventuras.travel</footer>
     </div>
 
-    <script src="<?= Router::url('/assets/js/client_portal.js') ?>"></script>
+    <script src="<?= Router::url('/assets/js/app.js') ?>"></script>
 </body>
 </html>
